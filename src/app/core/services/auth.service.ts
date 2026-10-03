@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { map, Observable, tap } from 'rxjs';
+import { catchError, EMPTY, map, Observable, tap } from 'rxjs';
 import { LoginDto, LoginRes, UserProfile, ValidateTokenRes } from './types/auth.types';
 
 @Injectable({ providedIn: 'root' })
@@ -34,8 +34,19 @@ export class AuthService {
   }
 
   logout() {
+    const refreshToken = this.refreshToken;
+
     localStorage.removeItem(this.LS_ACCESS);
     localStorage.removeItem(this.LS_REFRESH);
+    this.user.set(null);
+
+    // Revoca la sesión en la API para que el refresh token no pueda reutilizarse.
+    if (refreshToken) {
+      this.http
+        .post(`${this.apiUrl}/auth/logout`, { refreshToken })
+        .pipe(catchError(() => EMPTY))
+        .subscribe();
+    }
   }
 
   get accessToken(): string | null {

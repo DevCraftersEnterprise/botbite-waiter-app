@@ -15,7 +15,7 @@ import { BranchesService } from '../../../core/services/branches.service';
 import { BranchForm } from '../../../core/services/forms/forms.interfaces';
 import { IconsService } from '../../../core/services/icons.service';
 import { OrgService } from '../../../core/services/org.service';
-import { Branch } from '../../../core/services/types/branches.types';
+import { Branch, StaffMember } from '../../../core/services/types/branches.types';
 import { Mode } from '../../../core/services/types/common.types';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../../shared/components/modal/modal';
@@ -84,6 +84,22 @@ export class BranchesComponent {
     const roles = this.authService.user()?.roles || [];
     return roles.includes('super') || roles.includes('admin');
   });
+
+  /** Dueños y admins administran sucursales; el personal (rol "user") solo consulta. */
+  readonly canManage = computed(() => {
+    const roles = this.authService.user()?.roles || [];
+    return roles.includes('super') || roles.includes('admin') || roles.includes('client');
+  });
+
+  // Personal de la sucursal (cajeros y meseros)
+  readonly staffBranch = signal<Branch | null>(null);
+  readonly staff = signal<StaffMember[]>([]);
+  readonly staffLoading = signal(false);
+  readonly staffEmail = signal('');
+  readonly removingStaffId = signal<string | null>(null);
+  readonly staffEmailValid = computed(() =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.staffEmail().trim())
+  );
 
   readonly modalTitle = computed(() =>
     this.mode() === 'create' ? 'Nueva sucursal' : 'Editar sucursal'
@@ -413,5 +429,91 @@ export class BranchesComponent {
   updateMessagesToAdd(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     this.messagesToAdd.set(Number(input.value));
+  }
+
+  openStaff(branch: Branch): void {
+    this.staffBranch.set(branch);
+    this.staffEmail.set('');
+    this.staff.set([]);
+    this.loadStaff(branch.id);
+  }
+
+  closeStaff(): void {
+    this.staffBranch.set(null);
+    this.staff.set([]);
+    this.staffEmail.set('');
+  }
+
+  updateStaffEmail(ev: Event): void {
+    this.staffEmail.set((ev.target as HTMLInputElement).value);
+  }
+
+  addStaff(): void {
+    const branch = this.staffBranch();
+    const email = this.staffEmail().trim().toLowerCase();
+
+    if (!branch || !this.staffEmailValid()) return;
+
+    this.saving.set(true);
+
+    this.branchesService
+      .addStaff(branch.id, email)
+      .pipe(
+        catchError((e) => {
+          console.error('Error assigning staff:', e);
+          this.toastrService.error(
+            e?.status === 404
+              ? 'No existe una cuenta de personal (rol usuario) con ese correo'
+              : 'No se pudo asignar al personal'
+          );
+          return EMPTY;
+        }),
+        finalize(() => this.saving.set(false))
+      )
+      .subscribe((member) => {
+        this.staff.update((list) =>
+          list.some((s) => s.id === member.id) ? list : [...list, member]
+        );
+        this.staffEmail.set('');
+        this.toastrService.success(`${member.email} asignado a ${branch.name}`);
+      });
+  }
+
+  removeStaff(member: StaffMember): void {
+    const branch = this.staffBranch();
+    if (!branch) return;
+
+    this.removingStaffId.set(member.id);
+
+    this.branchesService
+      .removeStaff(branch.id, member.id)
+      .pipe(
+        catchError((e) => {
+          console.error('Error removing staff:', e);
+          this.toastrService.error('No se pudo quitar al personal');
+          return EMPTY;
+        }),
+        finalize(() => this.removingStaffId.set(null))
+      )
+      .subscribe(() => {
+        this.staff.update((list) => list.filter((s) => s.id !== member.id));
+        this.toastrService.success(`${member.email} ya no tiene acceso a ${branch.name}`);
+      });
+  }
+
+  private loadStaff(branchId: string): void {
+    this.staffLoading.set(true);
+
+    this.branchesService
+      .listStaff(branchId)
+      .pipe(
+        catchError((e) => {
+          console.error('Error loading staff:', e);
+          this.toastrService.error('No se pudo cargar el personal de la sucursal');
+          return EMPTY;
+        }),
+        finalize(() => this.staffLoading.set(false))
+      )
+      .subscribe((staff) => this.staff.set(staff));
   }
 }

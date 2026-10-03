@@ -30,6 +30,9 @@ export class SocketService implements OnDestroy {
   private socket: Socket | null = null;
   private orderUpdateSubject = new Subject<{ branchId: string }>();
   private notificationSubject = new Subject<NotificationUpdate>();
+  // Sala a la que hay que volver a unirse tras una reconexión (el servidor
+  // olvida las salas al desconectarse).
+  private currentBranchId: string | null = null;
 
   constructor() {
     this.connect();
@@ -44,10 +47,16 @@ export class SocketService implements OnDestroy {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,
+      // La API exige el access token. Se lee en cada intento para usar siempre
+      // el más reciente (el interceptor lo renueva al expirar).
+      auth: (cb) => cb({ token: localStorage.getItem('botbite.access') ?? '' }),
     });
 
     this.socket.on('connect', () => {
       console.log('WebSocket connected');
+      if (this.currentBranchId) {
+        this.socket?.emit('joinBranch', this.currentBranchId);
+      }
     });
 
     this.socket.on('disconnect', () => {
@@ -76,13 +85,27 @@ export class SocketService implements OnDestroy {
   }
 
   joinBranch(branchId: string): void {
-    if (this.socket) {
-      this.socket.emit('joinBranch', branchId);
-      console.log(`Joined branch room: ${branchId}`);
+    this.currentBranchId = branchId;
+
+    if (!this.socket) {
+      this.connect();
+      return; // Se une a la sala al conectar.
     }
+
+    if (!this.socket.connected) {
+      // Si el socket se creó antes del login o agotó sus reintentos, se vuelve
+      // a conectar ahora que hay token; se une a la sala en 'connect'.
+      this.socket.connect();
+      return;
+    }
+
+    this.socket.emit('joinBranch', branchId);
+    console.log(`Joined branch room: ${branchId}`);
   }
 
   leaveBranch(branchId: string): void {
+    if (this.currentBranchId === branchId) this.currentBranchId = null;
+
     if (this.socket) {
       this.socket.emit('leaveBranch', branchId);
       console.log(`Left branch room: ${branchId}`);

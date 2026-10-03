@@ -26,6 +26,18 @@ export interface BranchListResponse {
   pagination: Pagination;
 }
 
+/** Cajero o mesero (rol "user") asignado a una sucursal. */
+export interface StaffMember {
+  id: string;
+  email: string;
+  isActive: boolean;
+  assignedAt: Date | string;
+}
+
+export interface StaffListResponse {
+  staff: StaffMember[];
+}
+
 export interface BranchesBulkResponse {
   branches: Branch[];
   count: number;

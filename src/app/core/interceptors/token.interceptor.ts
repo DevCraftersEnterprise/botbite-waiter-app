@@ -7,8 +7,10 @@ import { environment } from '../../../environments/environment';
 let isRefreshing = false;
 
 interface RefreshTokenResponse {
-  accessToken: string;
+  accessToken?: string;
   refreshToken?: string;
+  access_token?: string;
+  refresh_token?: string;
 }
 
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
@@ -36,11 +38,16 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
             switchMap((res) => {
               isRefreshing = false;
 
-              if (res?.accessToken) {
-                localStorage.setItem('botbite.access', res.accessToken);
+              const accessToken = res?.accessToken ?? res?.access_token;
+              const refreshToken = res?.refreshToken ?? res?.refresh_token;
+
+              if (accessToken) {
+                localStorage.setItem('botbite.access', accessToken);
+                // La API rota el refresh token en cada uso: el anterior ya no sirve.
+                if (refreshToken) localStorage.setItem('botbite.refresh', refreshToken);
 
                 const retried = req.clone({
-                  setHeaders: { Authorization: `Bearer ${res.accessToken}` },
+                  setHeaders: { Authorization: `Bearer ${accessToken}` },
                 });
                 return next(retried);
               }

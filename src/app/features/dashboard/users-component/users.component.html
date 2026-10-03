@@ -228,9 +228,9 @@
           class="w-full rounded-xl border border-black/10 px-3 py-2"
           [value]="form().password"
           (input)="updateFormPassword($event)"
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Mínimo 8 caracteres"
           required
-          minlength="6"
+          minlength="8"
           autocomplete="new-password"
         />
       </div>
@@ -239,8 +239,8 @@
         <p class="text-sm text-red-600">
           @if (form().email.trim() === '') {
             El email es obligatorio
-          } @else if (form().password.length < 6) {
-            La contraseña debe tener al menos 6 caracteres
+          } @else if (form().password.trim().length < 8) {
+            La contraseña debe tener al menos 8 caracteres
           }
         </p>
       }

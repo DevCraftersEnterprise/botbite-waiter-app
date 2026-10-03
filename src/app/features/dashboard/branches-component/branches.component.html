@@ -5,6 +5,7 @@
       description="Administra las sucursales del restaurante seleccionado"
     />
 
+    @if (canManage()) {
     <div class="flex flex-col flex-wrap gap-3 md:flex-row md:justify-end">
       <button
         class="w-full cursor-pointer rounded-xl border border-green-200 bg-green-100 px-3 py-2 text-green-800 transition-all hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:w-auto"
@@ -62,6 +63,7 @@
         </div>
       </button>
     </div>
+    }
   </div>
 
   <div class="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
@@ -157,6 +159,7 @@
             </td>
             <td class="px-4 py-3">
               <div class="flex flex-wrap items-center justify-end gap-2">
+                @if (canManage()) {
                 @if (canAddMessages()) {
                   <button
                     class="btn-table-neutral"
@@ -183,6 +186,17 @@
                     </div>
                   </button>
                 }
+
+                <button
+                  class="btn-table-neutral"
+                  (click)="openStaff(branch)"
+                  [attr.aria-label]="'Personal de ' + branch.name"
+                >
+                  <div class="flex items-center justify-center gap-1">
+                    <lucide-icon [img]="iconsService.users" size="15"></lucide-icon>
+                    <span class="hidden text-xs 2xl:inline">Personal</span>
+                  </div>
+                </button>
 
                 <button
                   class="btn-table-warning"
@@ -221,6 +235,7 @@
                       <span class="hidden text-xs 2xl:inline">Activar</span>
                     </div>
                   </button>
+                }
                 }
               </div>
             </td>
@@ -374,6 +389,81 @@
       @if (addMessagesDisabled() && messagesToAdd() !== null) {
         <p class="text-sm text-red-600">Ingresa una cantidad válida mayor a 0</p>
       }
+    </div>
+  </app-modal>
+
+  <app-modal
+    [isOpen]="!!staffBranch()"
+    title="Personal de la sucursal"
+    [maxWidth]="'max-w-lg'"
+    [showActions]="false"
+    (close)="closeStaff()"
+  >
+    <div class="space-y-5">
+      <p class="text-sm text-neutral-600">
+        Los cajeros y meseros asignados a <strong>{{ staffBranch()?.name }}</strong> pueden ver sus
+        pedidos y notificaciones en tiempo real. No pueden modificar la sucursal ni los menús.
+      </p>
+
+      <form class="flex flex-col gap-2 sm:flex-row" (submit)="$event.preventDefault(); addStaff()">
+        <label for="staffEmail" class="sr-only">Correo del cajero o mesero</label>
+        <input
+          id="staffEmail"
+          type="email"
+          autocomplete="off"
+          class="w-full rounded-xl border border-black/10 px-3 py-2"
+          placeholder="correo@restaurante.com"
+          [value]="staffEmail()"
+          (input)="updateStaffEmail($event)"
+        />
+        <button
+          type="submit"
+          class="cursor-pointer rounded-xl bg-black px-4 py-2 text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!staffEmailValid() || saving()"
+        >
+          <div class="flex items-center justify-center gap-2">
+            <lucide-icon [img]="iconsService.addUser" size="15" color="white" aria-hidden="true"></lucide-icon>
+            <span class="text-sm">{{ saving() ? 'Asignando...' : 'Asignar' }}</span>
+          </div>
+        </button>
+      </form>
+      <p class="text-xs text-neutral-500">
+        La cuenta debe existir con rol "usuario". Un administrador la crea desde Usuarios.
+      </p>
+
+      <div class="rounded-xl border border-black/10">
+        @if (staffLoading()) {
+          <p class="px-4 py-3 text-sm text-neutral-500">Cargando personal...</p>
+        } @else {
+          <ul class="divide-y divide-black/5">
+            @for (member of staff(); track member.id) {
+              <li class="flex items-center justify-between gap-3 px-4 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium">{{ member.email }}</p>
+                  @if (!member.isActive) {
+                    <p class="text-xs text-red-600">Cuenta desactivada</p>
+                  }
+                </div>
+                <button
+                  class="btn-table-danger"
+                  (click)="removeStaff(member)"
+                  [disabled]="removingStaffId() === member.id"
+                  [attr.aria-label]="'Quitar a ' + member.email"
+                >
+                  <div class="flex items-center justify-center gap-1">
+                    <lucide-icon [img]="iconsService.disable" size="15" color="red"></lucide-icon>
+                    <span class="text-xs">Quitar</span>
+                  </div>
+                </button>
+              </li>
+            } @empty {
+              <li class="px-4 py-3 text-sm text-neutral-500">
+                Aún no hay personal asignado a esta sucursal.
+              </li>
+            }
+          </ul>
+        }
+      </div>
     </div>
   </app-modal>
 </div>
