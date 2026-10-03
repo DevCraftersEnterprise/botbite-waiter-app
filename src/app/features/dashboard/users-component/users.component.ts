@@ -69,7 +69,8 @@ export class UsersComponent {
 
   readonly isFormValid = computed(() => {
     const f = this.form();
-    return f.email.trim() !== '' && f.password.trim().length >= 6;
+    // La API exige al menos 8 caracteres.
+    return f.email.trim() !== '' && f.password.trim().length >= 8;
   });
 
   readonly toggleConfirmTitle = computed(() =>

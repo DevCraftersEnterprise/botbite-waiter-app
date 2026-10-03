@@ -8,6 +8,8 @@ import {
   BranchesBulkResponse,
   BranchListResponse,
   BranchResponse,
+  StaffListResponse,
+  StaffMember,
 } from './types/branches.types';
 
 @Injectable({
@@ -117,6 +119,32 @@ export class BranchesService {
         map((response) => response.branch),
         tap(() => this.orgService.refreshGlobalBranches())
       );
+  }
+
+  listStaff(branchId: string): Observable<StaffMember[]> {
+    return this.http
+      .get<StaffListResponse>(this.staffUrl(branchId))
+      .pipe(map((response) => response.staff));
+  }
+
+  addStaff(branchId: string, email: string): Observable<StaffMember> {
+    return this.http
+      .post<{ staff: StaffMember }>(this.staffUrl(branchId), { email })
+      .pipe(map((response) => response.staff));
+  }
+
+  removeStaff(branchId: string, userId: string): Observable<void> {
+    return this.http.delete<void>(`${this.staffUrl(branchId)}/${userId}`);
+  }
+
+  private staffUrl(branchId: string): string {
+    const restaurantId = this.orgService.selectedRestaurantId();
+
+    if (!restaurantId) {
+      throw new Error('No restaurant selected');
+    }
+
+    return `${this.apiUrl}/branches/${restaurantId}/${branchId}/staff`;
   }
 
   bulkUploadByCsv(file: File): Observable<BranchesBulkResponse> {
