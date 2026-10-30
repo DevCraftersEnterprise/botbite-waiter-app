@@ -108,16 +108,10 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   markAsRead(notification: CashierNotification): void {
     if (!notification.isActive) return;
 
-    const branchId = this.orgService.selectedBranchId();
-    if (!branchId) {
-      this.toastrService.error('No se ha seleccionado una sucursal.');
-      return;
-    }
-
     const updated = { ...notification, isActive: false };
     this.handleNotificationUpdate(updated);
 
-    this.ordersService.markNotificationAsRead(notification.id, branchId).subscribe({
+    this.ordersService.markNotificationAsRead(notification.id).subscribe({
       error: () => {
         this.handleNotificationUpdate(notification);
         this.toastrService.error('Error al marcar la notificación como leída.');
@@ -128,16 +122,10 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   markAsUnread(notification: CashierNotification): void {
     if (notification.isActive) return;
 
-    const branchId = this.orgService.selectedBranchId();
-    if (!branchId) {
-      this.toastrService.error('No se ha seleccionado una sucursal.');
-      return;
-    }
-
     const updated = { ...notification, isActive: true };
     this.handleNotificationUpdate(updated);
 
-    this.ordersService.markNotificationAsUnread(notification.id, branchId).subscribe({
+    this.ordersService.markNotificationAsUnread(notification.id).subscribe({
       error: () => {
         this.handleNotificationUpdate(notification);
         this.toastrService.error('Error al marcar la notificación como no leída.');

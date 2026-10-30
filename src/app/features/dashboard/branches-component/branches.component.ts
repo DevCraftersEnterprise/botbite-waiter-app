@@ -51,9 +51,6 @@ export class BranchesComponent {
   readonly confirming = signal(false);
   private confirmEnable = signal<boolean | null>(null);
   readonly target = signal<Branch | null>(null);
-  readonly addingMessages = signal(false);
-  readonly messagesToAdd = signal(0);
-  readonly targetForMessages = signal<Branch | null>(null);
   readonly generatingQr = signal<string | null>(null);
   readonly filters = signal<{ isActive?: boolean }>({});
 
@@ -78,11 +75,6 @@ export class BranchesComponent {
     const isActive = this.filters().isActive;
     if (isActive === undefined) return '';
     return isActive ? 'true' : 'false';
-  });
-
-  readonly canAddMessages = computed(() => {
-    const roles = this.authService.user()?.roles || [];
-    return roles.includes('super') || roles.includes('admin');
   });
 
   /** Dueños y admins administran sucursales; el personal (rol "user") solo consulta. */
@@ -118,8 +110,6 @@ export class BranchesComponent {
     const action = this.confirmTargetStatus() ? 'activar' : 'desactivar';
     return `¿Seguro que quieres ${action} "${this.target()?.name}"?`;
   });
-
-  readonly addMessagesDisabled = computed(() => this.messagesToAdd() <= 0);
 
   private readonly paginationState = createPaginationState(this.total, {
     onChange: () => this.fetch(),
@@ -319,48 +309,6 @@ export class BranchesComponent {
     });
   }
 
-  openAddMessages(branch: Branch): void {
-    this.targetForMessages.set(branch);
-    this.messagesToAdd.set(0);
-    this.addingMessages.set(true);
-  }
-
-  closeAddMessagesModal(): void {
-    this.addingMessages.set(false);
-    this.targetForMessages.set(null);
-    this.messagesToAdd.set(0);
-  }
-
-  handleAddMessages(): void {
-    const branch = this.targetForMessages();
-    const amount = this.messagesToAdd();
-
-    if (!branch || amount <= 0) {
-      this.toastrService.warning('Ingresa una cantidad válida de mensajes');
-      return;
-    }
-
-    this.saving.set(true);
-
-    this.branchesService
-      .update(branch.id, {
-        availableMessages: amount,
-      })
-      .pipe(
-        catchError((e) => {
-          console.error('Error adding messages:', e);
-          this.toastrService.error('Error al agregar mensajes');
-          return EMPTY;
-        }),
-        finalize(() => this.saving.set(false))
-      )
-      .subscribe(() => {
-        this.toastrService.success(`${amount} mensajes agregados correctamente`);
-        this.closeAddMessagesModal();
-        this.reload();
-      });
-  }
-
   onGenerateQr(branch: Branch): void {
     this.generatingQr.set(branch.id);
 
@@ -424,11 +372,6 @@ export class BranchesComponent {
   updateFormChecked<K extends keyof BranchForm>(key: K, ev: Event): void {
     const el = ev.target as HTMLInputElement;
     this.form.update((f) => ({ ...f, [key]: el.checked }));
-  }
-
-  updateMessagesToAdd(ev: Event): void {
-    const input = ev.target as HTMLInputElement;
-    this.messagesToAdd.set(Number(input.value));
   }
 
   openStaff(branch: Branch): void {

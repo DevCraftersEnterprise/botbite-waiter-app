@@ -8,7 +8,6 @@ export interface Branch {
   phoneNumberReception?: string | null;
   qrUrl?: string | null;
   surveyUrl?: string | null;
-  availableMessages: number;
   restaurantId: string;
   isActive: boolean;
   createdAt: Date | string;

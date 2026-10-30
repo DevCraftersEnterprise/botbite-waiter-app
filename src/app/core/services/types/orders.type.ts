@@ -4,7 +4,6 @@ import { MenuItem } from './menus.types';
 export interface Order {
   id: string;
   total: number;
-  interactions: number;
   customerId: string;
   branchId: string;
   orderItems: OrderItem[];

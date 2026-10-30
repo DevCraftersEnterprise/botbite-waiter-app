@@ -2,7 +2,7 @@
 
 Panel de administración de **BotBite**, el mesero virtual por WhatsApp para restaurantes. Lo usan:
 
-- **Administradores de BotBite** (`super`, `admin`): usuarios, categorías, todos los restaurantes, y asignación de créditos de mensajes.
+- **Administradores de BotBite** (`super`, `admin`): usuarios, categorías, y todos los restaurantes.
 - **Dueños de restaurante** (`client`): sus restaurantes, sucursales, productos, menús, QR de las mesas y personal de cada sucursal.
 - **Cajeros y meseros** (`user`): pedidos y notificaciones en tiempo real de las sucursales que tienen asignadas, en modo lectura.
 
@@ -77,11 +77,11 @@ src/app/
 
 | Pantalla | Rol mínimo | Qué hace |
 | --- | --- | --- |
-| Inicio | todos | Resumen de la sucursal: créditos disponibles y QR |
+| Inicio | todos | Resumen de la sucursal y QR |
 | Usuarios | admin | Crear cuentas `user` y `client`, activar o desactivar, y dar o quitar el rol admin |
 | Categorías | admin | Categorías globales de productos |
 | Restaurantes | user | Restaurantes propios (los cajeros ven solo los de sus sucursales) |
-| Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal, **personal** y créditos (admin) |
+| Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal y **personal** |
 | Productos | client | Catálogo, carga masiva por CSV y fotos |
 | Menús | client | Menús por sucursal, items, precios, recomendados y PDF |
 | Órdenes | user | Pedidos de la sucursal |
