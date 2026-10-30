@@ -45,8 +45,6 @@ export class HomeComponent {
   protected readonly qrCustomText = signal<string>('');
 
   private readonly todayCount = signal<number>(0);
-  private readonly avgInteractions = signal<number>(0);
-  protected readonly availableMessages = signal<number>(0);
   protected readonly branchQrUrl = signal<string>('');
 
   protected readonly metrics = computed<MetricCard[]>(() => [
@@ -54,16 +52,6 @@ export class HomeComponent {
       label: 'Órdenes totales',
       value: this.todayCount(),
       icon: this.iconsService.orders,
-    },
-    {
-      label: 'Mensajes disponibles',
-      value: this.availableMessages(),
-      icon: this.iconsService.message,
-    },
-    {
-      label: 'Interacciones promedio con el asistente',
-      value: this.avgInteractions(),
-      icon: this.iconsService.assistant,
     },
   ]);
 
@@ -81,7 +69,6 @@ export class HomeComponent {
       this.resetMetrics();
 
       this.fetchToday(branchId);
-      this.availableMessages.set(this.orgService.selectedBranch()?.availableMessages ?? 0);
       this.branchQrUrl.set(this.orgService.selectedBranch()?.qrUrl ?? '');
     });
   }
@@ -106,19 +93,10 @@ export class HomeComponent {
 
   private updateMetrics(orders: Order[]): void {
     this.todayCount.set(orders.length);
-
-    if (orders.length > 0) {
-      const totalInteractions = orders.reduce((acc, order) => acc + order.interactions, 0);
-      this.avgInteractions.set(Math.round(totalInteractions / orders.length));
-    } else {
-      this.avgInteractions.set(0);
-    }
   }
 
   private resetMetrics(): void {
     this.todayCount.set(0);
-    this.avgInteractions.set(0);
-    this.availableMessages.set(0);
   }
 
   generateBranchQr(): void {

@@ -36,18 +36,14 @@ export class OrdersService {
     return this.http.get<{
       active: CashierNotification[];
       inactive: CashierNotification[];
-    }>(`${this.apiUrl}/messages/notifications?branchId=${branchId}`);
+    }>(`${this.apiUrl}/notifications?branchId=${branchId}`);
   }
 
-  markNotificationAsRead(notificationId: string, branchId: string): Observable<void> {
-    const params = new HttpParams().set('branchId', branchId);
-
-    return this.http.patch<void>(`${this.apiUrl}/messages/${notificationId}/read`, { params });
+  markNotificationAsRead(notificationId: string): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/notifications/${notificationId}/read`, {});
   }
 
-  markNotificationAsUnread(notificationId: string, branchId: string): Observable<void> {
-    const params = new HttpParams().set('branchId', branchId);
-
-    return this.http.patch<void>(`${this.apiUrl}/messages/${notificationId}/unread`, { params });
+  markNotificationAsUnread(notificationId: string): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/notifications/${notificationId}/unread`, {});
   }
 }

@@ -109,7 +109,6 @@
           <th class="w-1/5 px-4 py-3 text-left font-medium">Dirección</th>
           <th class="w-32 px-4 py-3 text-left font-medium">Tel. Asistente</th>
           <th class="w-32 px-4 py-3 text-left font-medium">Tel. Caja</th>
-          <th class="w-24 px-4 py-3 text-left font-medium">Mensajes</th>
           <th class="w-28 px-4 py-3 text-left font-medium">Estado</th>
           <th class="px-4 py-3 text-right font-medium">Acciones</th>
         </tr>
@@ -136,7 +135,6 @@
             <td class="w-1/5 truncate px-4 py-3" [title]="branch.address">{{ branch.address }}</td>
             <td class="w-32 px-4 py-3">{{ branch.phoneNumberAssistant }}</td>
             <td class="w-32 px-4 py-3">{{ branch.phoneNumberReception }}</td>
-            <td class="w-24 px-4 py-3">{{ branch.availableMessages }}</td>
             <td class="w-28 px-4 py-3">
               <div
                 class="inline-flex items-center gap-2 rounded-full border px-2 py-1 text-xs"
@@ -160,18 +158,6 @@
             <td class="px-4 py-3">
               <div class="flex flex-wrap items-center justify-end gap-2">
                 @if (canManage()) {
-                @if (canAddMessages()) {
-                  <button
-                    class="btn-table-neutral"
-                    (click)="openAddMessages(branch)"
-                    [attr.aria-label]="'Agregar mensajes a ' + branch.name"
-                  >
-                    <div class="flex items-center justify-center gap-1">
-                      <lucide-icon [img]="iconsService.add" size="15" color="green"></lucide-icon>
-                      <span class="hidden text-xs 2xl:inline">Mensajes</span>
-                    </div>
-                  </button>
-                }
                 @if (!branch.qrUrl) {
                   <button
                     class="btn-table-neutral"
@@ -244,7 +230,7 @@
           <app-empty-state
             [loading]="loading()"
             [isEmpty]="branches().length === 0"
-            [colspan]="7"
+            [colspan]="6"
             message="No hay sucursales para mostrar."
           />
         }
@@ -351,45 +337,6 @@
     (confirm)="toggleActive()"
   >
     <p class="text-sm text-neutral-600">{{ confirmMessage() }}</p>
-  </app-modal>
-
-  <app-modal
-    [isOpen]="addingMessages()"
-    title="Agregar mensajes"
-    [maxWidth]="'max-w-md'"
-    [showActions]="true"
-    [loading]="saving()"
-    [confirmDisabled]="addMessagesDisabled()"
-    confirmText="Agregar"
-    (close)="closeAddMessagesModal()"
-    (cancel)="closeAddMessagesModal()"
-    (confirm)="handleAddMessages()"
-  >
-    <div class="space-y-4">
-      <p class="text-sm text-neutral-600">
-        Sucursal: <strong>{{ targetForMessages()?.name }}</strong
-        ><br />
-        Mensajes actuales: <strong>{{ targetForMessages()?.availableMessages }}</strong>
-      </p>
-
-      <div class="space-y-1">
-        <label for="messagesToAdd" class="block text-sm font-medium">Cantidad a agregar</label>
-        <input
-          id="messagesToAdd"
-          type="number"
-          min="1"
-          step="1"
-          class="w-full rounded-xl border border-black/10 px-3 py-2"
-          [value]="messagesToAdd()"
-          (input)="updateMessagesToAdd($event)"
-          placeholder="Ej: 100"
-        />
-      </div>
-
-      @if (addMessagesDisabled() && messagesToAdd() !== null) {
-        <p class="text-sm text-red-600">Ingresa una cantidad válida mayor a 0</p>
-      }
-    </div>
   </app-modal>
 
   <app-modal
