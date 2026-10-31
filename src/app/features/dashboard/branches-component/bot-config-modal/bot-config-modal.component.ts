@@ -147,13 +147,17 @@ export class BotConfigModalComponent {
     return invalid(f.latitude, 90) || invalid(f.longitude, 180);
   });
 
-  protected readonly canSave = computed(
-    () =>
-      !!this.form() &&
+  protected readonly canSave = computed(() => {
+    const f = this.form();
+    return (
+      !!f &&
       !this.loading() &&
+      !!f.dailyCloseTime &&
+      !!f.timezone.trim() &&
       !this.coordinatesMissing() &&
       !this.coordinatesInvalid()
-  );
+    );
+  });
 
   constructor() {
     effect(() => {

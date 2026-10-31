@@ -79,13 +79,18 @@ src/app/
 | --- | --- | --- |
 | Inicio | todos | Resumen de la sucursal y QR |
 | Usuarios | admin | Crear cuentas `user` y `client`, activar o desactivar, y dar o quitar el rol admin |
-| Categorías | admin | Categorías globales de productos |
+| Categorías | client | Categorías del restaurante y su orden en el menú |
 | Restaurantes | user | Restaurantes propios (los cajeros ven solo los de sus sucursales) |
-| Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal y **personal** |
+| Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal, **personal** y **mesero digital** |
 | Productos | client | Catálogo, carga masiva por CSV y fotos |
 | Menús | client | Menús por sucursal, items, precios, recomendados y PDF |
 | Órdenes | user | Pedidos de la sucursal |
 | Notificaciones | user | Avisos de caja en tiempo real; se marcan como atendidos |
+
+### Mesero digital
+En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp: ubicación y radio, hora de cierre, mesas válidas y encuesta.
+
+Un admin además administra lo que conecta con n8n: el slug, el `phone_number_id` de Meta, la URL de los webhooks, las funciones contratadas y las llaves del bot. Cada llave se muestra una sola vez, al generarla.
 
 ### Personal de la sucursal
 En **Sucursales → Personal**, el dueño (o un admin) asigna cajeros y meseros por correo. La cuenta debe existir con rol `user` (la crea un admin en **Usuarios**). El personal solo ve las sucursales asignadas y no puede modificar nada.
