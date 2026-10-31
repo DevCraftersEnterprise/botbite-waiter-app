@@ -1,14 +1,14 @@
 <div class="space-y-6">
-  <div class="flex flex-col gap-4">
+  <div class="page-header">
     <shared-title
       title="Sucursales"
       description="Administra las sucursales del restaurante seleccionado"
     />
 
     @if (canManage()) {
-    <div class="flex flex-col flex-wrap gap-3 md:flex-row md:justify-end">
+    <div class="actions-bar">
       <button
-        class="w-full cursor-pointer rounded-xl border border-green-200 bg-green-100 px-3 py-2 text-green-800 transition-all hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:w-auto"
+        class="flex-1 cursor-pointer whitespace-nowrap rounded-xl border border-green-200 bg-green-100 px-3 py-2 text-green-800 transition-all hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:flex-none"
         (click)="onDownloadTemplate()"
         aria-label="Plantilla de carga masiva por CSV"
       >
@@ -31,7 +31,7 @@
         aria-label="Seleccionar archivo CSV para carga masiva de sucursales"
       />
       <button
-        class="w-full cursor-pointer rounded-xl border border-black/10 px-3 py-2 transition-all hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:w-auto"
+        class="flex-1 cursor-pointer whitespace-nowrap rounded-xl border border-black/10 px-3 py-2 transition-all hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:flex-none"
         (click)="csvInput.click()"
         [disabled]="!restaurantId()"
         aria-label="Carga masiva por CSV"
@@ -47,7 +47,7 @@
         </div>
       </button>
       <button
-        class="w-full cursor-pointer rounded-xl bg-black px-3 py-2 text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:w-auto"
+        class="flex-1 cursor-pointer whitespace-nowrap rounded-xl bg-black px-3 py-2 text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:flex-none"
         (click)="openCreate()"
         [disabled]="!restaurantId()"
         aria-label="Crear nueva sucursal"
@@ -105,8 +105,8 @@
     <table class="w-full min-w-[1000px] table-fixed text-sm">
       <thead class="bg-neutral-50 text-neutral-600">
         <tr>
-          <th class="w-1/5 px-4 py-3 text-left font-medium">Nombre</th>
-          <th class="w-1/5 px-4 py-3 text-left font-medium">Dirección</th>
+          <th class="w-1/6 px-4 py-3 text-left font-medium">Nombre</th>
+          <th class="w-1/6 px-4 py-3 text-left font-medium">Dirección</th>
           <th class="w-32 px-4 py-3 text-left font-medium">Tel. Asistente</th>
           <th class="w-32 px-4 py-3 text-left font-medium">Tel. Caja</th>
           <th class="w-28 px-4 py-3 text-left font-medium">Estado</th>
@@ -132,7 +132,7 @@
                 }
               </div>
             </td>
-            <td class="w-1/5 truncate px-4 py-3" [title]="branch.address">{{ branch.address }}</td>
+            <td class="w-1/6 truncate px-4 py-3" [title]="branch.address">{{ branch.address }}</td>
             <td class="w-32 px-4 py-3">{{ branch.phoneNumberAssistant }}</td>
             <td class="w-32 px-4 py-3">{{ branch.phoneNumberReception }}</td>
             <td class="w-28 px-4 py-3">
@@ -163,6 +163,7 @@
                     class="btn-table-neutral"
                     (click)="onGenerateQr(branch)"
                     [attr.aria-label]="'Generar QR de ' + branch.name"
+                    [title]="'Generar QR de ' + branch.name"
                   >
                     <div class="flex items-center justify-center gap-1">
                       <lucide-icon [img]="iconsService.qrCode" size="15"></lucide-icon>
@@ -177,6 +178,7 @@
                   class="btn-table-neutral"
                   (click)="botBranch.set(branch)"
                   [attr.aria-label]="'Mesero digital de ' + branch.name"
+                  [title]="'Mesero digital de ' + branch.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.assistant" size="15"></lucide-icon>
@@ -188,6 +190,7 @@
                   class="btn-table-neutral"
                   (click)="openStaff(branch)"
                   [attr.aria-label]="'Personal de ' + branch.name"
+                  [title]="'Personal de ' + branch.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.users" size="15"></lucide-icon>
@@ -199,6 +202,7 @@
                   class="btn-table-warning"
                   (click)="openEdit(branch)"
                   [attr.aria-label]="'Editar sucursal ' + branch.name"
+                  [title]="'Editar sucursal ' + branch.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.edit" size="15" color="orange"></lucide-icon>
@@ -211,6 +215,7 @@
                     class="btn-table-danger"
                     (click)="confirmToggle(branch, false)"
                     [attr.aria-label]="'Desactivar ' + branch.name"
+                    [title]="'Desactivar ' + branch.name"
                   >
                     <div class="flex items-center justify-center gap-1">
                       <lucide-icon [img]="iconsService.disable" size="15" color="red"></lucide-icon>
@@ -222,6 +227,7 @@
                     class="btn-table-success"
                     (click)="confirmToggle(branch, true)"
                     [attr.aria-label]="'Activar ' + branch.name"
+                    [title]="'Activar ' + branch.name"
                   >
                     <div class="flex items-center justify-center gap-1">
                       <lucide-icon
@@ -413,6 +419,7 @@
                   (click)="removeStaff(member)"
                   [disabled]="removingStaffId() === member.id"
                   [attr.aria-label]="'Quitar a ' + member.email"
+                  [title]="'Quitar a ' + member.email"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.disable" size="15" color="red"></lucide-icon>

@@ -84,8 +84,8 @@ src/app/
 | Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal, **personal** y **mesero digital** |
 | Productos | client | Catálogo, carga masiva por CSV y fotos |
 | Menús | client | Menús por sucursal, items, precios, recomendados y PDF |
-| Órdenes | user | Pedidos de la sucursal |
-| Notificaciones | user | Avisos de caja en tiempo real; se marcan como atendidos |
+| Órdenes | user | Mesas con cuenta abierta y sus rondas, en vivo. El personal mueve las comandas, cobra las cuentas y abre sus propias cuentas |
+| Notificaciones | user | Avisos de caja en tiempo real, por tipo; se marcan como atendidos |
 
 ### Mesero digital
 En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp: ubicación y radio, hora de cierre, mesas válidas y encuesta.

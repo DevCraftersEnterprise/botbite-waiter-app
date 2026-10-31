@@ -57,6 +57,7 @@
       <thead class="bg-neutral-50 text-neutral-600">
         <tr>
           <th class="w-2/5 px-4 py-3 text-left font-medium">Nombre</th>
+          <th class="w-24 px-4 py-3 text-left font-medium">Orden</th>
           <th class="w-28 px-4 py-3 text-left font-medium">Estado</th>
           <th class="px-4 py-3 text-right font-medium">Acciones</th>
         </tr>
@@ -65,6 +66,7 @@
         @for (category of categories(); track category.id) {
           <tr class="animate-fade-in animate-duration-300 border-t border-black/10">
             <td class="w-2/5 truncate px-4 py-3" [title]="category.name">{{ category.name }}</td>
+            <td class="w-24 px-4 py-3">{{ category.sortOrder }}</td>
             <td class="w-28 px-4 py-3">
               <div
                 class="inline-flex items-center gap-2 rounded-full border px-2 py-1 text-xs"
@@ -91,6 +93,7 @@
                   class="btn-table-warning"
                   (click)="openEdit(category)"
                   [attr.aria-label]="'Editar categoría ' + category.name"
+                  [title]="'Editar categoría ' + category.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.edit" size="15" color="orange"></lucide-icon>
@@ -102,6 +105,7 @@
                     class="btn-table-danger"
                     (click)="confirmDisable(category)"
                     [attr.aria-label]="'Deshabilitar categoría ' + category.name"
+                    [title]="'Deshabilitar categoría ' + category.name"
                   >
                     <div class="flex items-center justify-center gap-1">
                       <lucide-icon [img]="iconsService.disable" size="15" color="red"></lucide-icon>
@@ -116,7 +120,7 @@
           <app-empty-state
             [loading]="loading()"
             [isEmpty]="categories().length === 0"
-            [colspan]="3"
+            [colspan]="4"
             message="No hay categorías para mostrar"
           />
         }

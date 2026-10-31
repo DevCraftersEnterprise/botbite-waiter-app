@@ -76,6 +76,7 @@
                     (click)="downloadPdf(menu)"
                     class="btn-table-primary"
                     [attr.aria-label]="'Descargar PDF del menú ' + menu.name"
+                    [title]="'Descargar PDF del menú ' + menu.name"
                   >
                     <div class="flex items-center gap-2">
                       <lucide-icon
@@ -134,6 +135,7 @@
                   class="btn-table-primary"
                   (click)="viewProducts(menu)"
                   [attr.aria-label]="'Ver productos del menú ' + menu.name"
+                  [title]="'Ver productos del menú ' + menu.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.eye" size="15" color="blue"></lucide-icon>
@@ -145,6 +147,7 @@
                   class="btn-table-warning"
                   (click)="openEdit(menu)"
                   [attr.aria-label]="'Editar menú ' + menu.name"
+                  [title]="'Editar menú ' + menu.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.edit" size="15" color="orange"></lucide-icon>
@@ -157,6 +160,7 @@
                   [class.btn-table-danger]="menu.isActive"
                   [class.btn-table-success]="!menu.isActive"
                   [attr.aria-label]="(menu.isActive ? 'Desactivar ' : 'Activar ') + menu.name"
+                  [title]="(menu.isActive ? 'Desactivar ' : 'Activar ') + menu.name"
                   (click)="confirmToggle(menu, menu.isActive)"
                 >
                   <div class="flex items-center justify-center gap-1">
@@ -231,7 +235,7 @@
           (change)="updateForm('isActive', $event)"
           class="rounded"
         />
-        <label for="active" class="text-sm">Activa</label>
+        <label for="active" class="text-sm">Activo</label>
       </div>
 
       @if (!isFormValid() && form().name) {

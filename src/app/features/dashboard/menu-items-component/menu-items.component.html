@@ -63,9 +63,9 @@
         <tr>
           <th class="w-12 px-4 py-3 text-center font-medium"></th>
           <th class="w-1/4 px-4 py-3 text-left font-medium">Producto</th>
-          <th class="w-1/6 px-4 py-3 text-left font-medium">Categoria</th>
+          <th class="w-1/6 px-4 py-3 text-left font-medium">Categoría</th>
           <th class="w-28 px-4 py-3 text-left font-medium">Estado</th>
-          <th class="w-24 px-4 py-3 text-left font-medium">Precio</th>
+          <th class="w-24 px-4 py-3 text-right font-medium">Precio</th>
           <th class="px-4 py-3 text-right font-medium">Acciones</th>
         </tr>
       </thead>
@@ -74,9 +74,12 @@
           <tr class="animate-fade-in animate-duration-300 border-t border-black/10">
             <td class="px-4 py-3 text-center">
               @if (menuItem.shouldRecommend) {
-                <lucide-icon [img]="iconsService.favorite" size="16" color="red" />
-              } @else {
-                <span class="text-neutral-400">--</span>
+                <lucide-icon
+                  [img]="iconsService.favorite"
+                  size="16"
+                  color="red"
+                  aria-label="Recomendado"
+                />
               }
             </td>
             <td class="px-4 py-3">{{ menuItem.product.name }}</td>
@@ -96,11 +99,11 @@
                   [color]="menuItem.isActive ? 'green' : 'red'"
                 />
                 <span class="">
-                  {{ menuItem.isActive ? 'Activa' : 'Inactiva' }}
+                  {{ menuItem.isActive ? 'Activo' : 'Inactivo' }}
                 </span>
               </div>
             </td>
-            <td class="w-24 px-4 py-3 text-right">{{ menuItem.price | currency: 'USD' }}</td>
+            <td class="w-24 px-4 py-3 text-right">{{ menuItem.price | currency: 'MXN' : 'symbol-narrow' }}</td>
             <td class="px-4 py-3">
               <div class="flex flex-wrap items-center justify-end gap-2">
                 <!-- Recomendar -->
@@ -108,6 +111,7 @@
                   class="btn-table-pink"
                   (click)="toggleRecommend(menuItem)"
                   [attr.aria-label]="'Recomendar ' + menuItem.product.name"
+                  [title]="'Recomendar ' + menuItem.product.name"
                 >
                   <div class="flex items-center justify-center">
                     <lucide-icon
@@ -124,6 +128,7 @@
                   class="btn-table-warning"
                   (click)="openEdit(menuItem)"
                   [attr.aria-label]="'Editar ' + menuItem.product.name"
+                  [title]="'Editar ' + menuItem.product.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.edit" size="15" color="orange"></lucide-icon>
@@ -137,6 +142,9 @@
                   [class.btn-table-success]="!menuItem.isActive"
                   (click)="confirmToggle(menuItem, menuItem.isActive)"
                   [attr.aria-label]="
+                    (menuItem.isActive ? 'Desactivar ' : 'Activar ') + menuItem.product.name
+                  "
+                  [title]="
                     (menuItem.isActive ? 'Desactivar ' : 'Activar ') + menuItem.product.name
                   "
                 >

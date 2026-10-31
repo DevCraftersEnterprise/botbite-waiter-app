@@ -8,10 +8,9 @@ import {
   OnDestroy,
   signal,
 } from '@angular/core';
-import { Check, LucideAngularModule, LucideIconData, RotateCcw } from 'lucide-angular';
+import { Check, LucideAngularModule, RotateCcw } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
 import { Subscription } from 'rxjs';
-import { IconsService } from '../../../core/services/icons.service';
 import { OrgService } from '../../../core/services/org.service';
 import {
   CashierNotification,
@@ -32,18 +31,44 @@ export class NotificationsComponent implements OnDestroy {
   private readonly ordersService = inject(OrdersService);
   private readonly toastrService = inject(ToastrService);
   private readonly socketService = inject(SocketService);
-  private readonly iconsService = inject(IconsService);
 
   private notificationSubscription?: Subscription;
 
   /** Qué se ve en cada tipo de aviso. */
-  protected readonly types: Record<NotificationType, { label: string; icon: LucideIconData }> = {
-    order: { label: 'Comanda', icon: this.iconsService.orders },
-    bill: { label: 'Cuenta', icon: this.iconsService.bill },
-    pay_with_waiter: { label: 'Paga con mesero', icon: this.iconsService.cash },
-    payment: { label: 'Pago', icon: this.iconsService.card },
-    alert: { label: 'Alerta', icon: this.iconsService.alert },
-    invoice: { label: 'Factura', icon: this.iconsService.invoice },
+  protected readonly types: Record<
+    NotificationType,
+    { label: string; chip: string; accent: string }
+  > = {
+    order: {
+      label: 'Comanda',
+      chip: 'border-amber-200 bg-amber-100 text-amber-800',
+      accent: 'border-l-amber-400',
+    },
+    bill: {
+      label: 'Cuenta',
+      chip: 'border-blue-200 bg-blue-100 text-blue-800',
+      accent: 'border-l-blue-400',
+    },
+    pay_with_waiter: {
+      label: 'Paga con mesero',
+      chip: 'border-purple-200 bg-purple-100 text-purple-800',
+      accent: 'border-l-purple-400',
+    },
+    payment: {
+      label: 'Pago',
+      chip: 'border-green-200 bg-green-100 text-green-800',
+      accent: 'border-l-green-400',
+    },
+    alert: {
+      label: 'Alerta',
+      chip: 'border-red-200 bg-red-100 text-red-800',
+      accent: 'border-l-red-500',
+    },
+    invoice: {
+      label: 'Factura',
+      chip: 'border-neutral-200 bg-neutral-100 text-neutral-700',
+      accent: 'border-l-neutral-400',
+    },
   };
   protected readonly typeOptions = Object.entries(this.types).map(([value, { label }]) => ({
     value,
