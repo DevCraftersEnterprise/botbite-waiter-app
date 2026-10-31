@@ -48,6 +48,8 @@ export interface OrderAccount {
   walletDiscount: number;
   total: number;
   tip: number;
+  /** Total más propina: lo que se le cobra al comensal. */
+  amountDue: number;
   paymentMethod: 'mercado_pago' | 'waiter' | null;
   rounds: OrderRound[];
 }
