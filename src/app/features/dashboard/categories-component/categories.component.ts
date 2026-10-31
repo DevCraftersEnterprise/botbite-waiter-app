@@ -1,11 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, EMPTY, finalize } from 'rxjs';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { CategoryForm } from '../../../core/services/forms/forms.interfaces';
 import { IconsService } from '../../../core/services/icons.service';
+import { OrgService } from '../../../core/services/org.service';
 import { Category } from '../../../core/services/types/category.types';
 import { Mode } from '../../../core/services/types/common.types';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
@@ -30,6 +38,7 @@ import { createSearchState } from '../../../shared/utils/search.util';
 })
 export class CategoriesComponent {
   protected readonly categoriesService = inject(CategoriesService);
+  protected readonly orgService = inject(OrgService);
   private readonly toastrService = inject(ToastrService);
   protected readonly iconsService = inject(IconsService);
 
@@ -41,11 +50,13 @@ export class CategoriesComponent {
 
   readonly form = signal<CategoryForm>({
     name: '',
+    sortOrder: 0,
     isActive: true,
   });
 
   readonly loading = signal(false);
   readonly categories = computed(() => this.categoriesService.categories());
+  readonly restaurantId = computed(() => this.orgService.selectedRestaurantId());
 
   readonly activeFilterValue = computed(() => {
     const isActive = this.filters().isActive;
@@ -83,16 +94,30 @@ export class CategoriesComponent {
 
   readonly search = this.searchState.searchTerm;
 
+  private previousRestaurantId: string | null = null;
+
   constructor() {
-    this.fetch();
+    effect(() => {
+      const rid = this.restaurantId();
+
+      if (rid && rid !== this.previousRestaurantId) {
+        this.previousRestaurantId = rid;
+        this.paginationState.resetToFirstPage();
+        this.fetch();
+      }
+    });
   }
 
   private fetch(): void {
+    const restaurantId = this.restaurantId();
+    if (!restaurantId) return;
+
     this.loading.set(true);
     const { limit, offset } = this.pagination();
 
     this.categoriesService
       .list({
+        restaurantId,
         search: this.search() || undefined,
         isActive: this.filters().isActive,
         limit,
@@ -139,7 +164,7 @@ export class CategoriesComponent {
 
   openCreate(): void {
     this.mode.set('create');
-    this.form.set({ name: '', isActive: true });
+    this.form.set({ name: '', sortOrder: 0, isActive: true });
   }
 
   openEdit(category: Category): void {
@@ -147,13 +172,14 @@ export class CategoriesComponent {
     this.form.set({
       id: category.id,
       name: category.name,
+      sortOrder: category.sortOrder,
       isActive: Boolean(category.isActive),
     });
   }
 
   closeModal(): void {
     this.mode.set(null);
-    this.form.set({ name: '', isActive: true });
+    this.form.set({ name: '', sortOrder: 0, isActive: true });
   }
 
   save(): void {
@@ -167,19 +193,24 @@ export class CategoriesComponent {
 
     const categoryData: Partial<Category> = {
       name: formValue.name.trim().toUpperCase(),
+      sortOrder: formValue.sortOrder,
       isActive: formValue.isActive,
     };
 
     const operation =
       this.mode() === 'create'
-        ? this.categoriesService.create(categoryData)
+        ? this.categoriesService.create({ ...categoryData, restaurantId: this.restaurantId()! })
         : this.categoriesService.update(formValue.id!, categoryData);
 
     operation
       .pipe(
         catchError((error) => {
           console.error('Error saving category:', error);
-          this.toastrService.error('Error al guardar la categoría');
+          this.toastrService.error(
+            error?.status === 409
+              ? 'El restaurante ya tiene una categoría con ese nombre'
+              : 'Error al guardar la categoría'
+          );
           return EMPTY;
         }),
         finalize(() => this.saving.set(false))
@@ -225,6 +256,11 @@ export class CategoriesComponent {
   updateFormName(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.form.update((form) => ({ ...form, name: input.value }));
+  }
+
+  updateFormSortOrder(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.form.update((form) => ({ ...form, sortOrder: Number(input.value) }));
   }
 
   updateFormActive(event: Event): void {

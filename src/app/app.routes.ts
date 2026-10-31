@@ -33,7 +33,7 @@ export const routes: Routes = [
       },
       {
         path: 'categories',
-        canActivate: [adminGuard],
+        canActivate: [clientGuard],
         loadComponent: () =>
           import('./features/dashboard/categories-component/categories.component').then(
             (m) => m.CategoriesComponent

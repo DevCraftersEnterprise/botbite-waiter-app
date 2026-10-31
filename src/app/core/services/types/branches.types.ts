@@ -3,6 +3,7 @@ import { Pagination } from './common.types';
 export interface Branch {
   id: string;
   name: string;
+  slug: string;
   address: string;
   phoneNumberAssistant?: string | null;
   phoneNumberReception?: string | null;

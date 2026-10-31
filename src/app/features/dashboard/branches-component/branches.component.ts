@@ -17,6 +17,7 @@ import { IconsService } from '../../../core/services/icons.service';
 import { OrgService } from '../../../core/services/org.service';
 import { Branch, StaffMember } from '../../../core/services/types/branches.types';
 import { Mode } from '../../../core/services/types/common.types';
+import { BotConfigModalComponent } from './bot-config-modal/bot-config-modal.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
@@ -34,6 +35,7 @@ import { createSearchState } from '../../../shared/utils/search.util';
     ModalComponent,
     EmptyStateComponent,
     LucideAngularModule,
+    BotConfigModalComponent,
   ],
   templateUrl: './branches.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,6 +84,9 @@ export class BranchesComponent {
     const roles = this.authService.user()?.roles || [];
     return roles.includes('super') || roles.includes('admin') || roles.includes('client');
   });
+
+  /** Sucursal abierta en "Mesero digital". */
+  readonly botBranch = signal<Branch | null>(null);
 
   // Personal de la sucursal (cajeros y meseros)
   readonly staffBranch = signal<Branch | null>(null);

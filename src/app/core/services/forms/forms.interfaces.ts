@@ -6,12 +6,14 @@ export interface UserForm {
 export interface CategoryForm {
   readonly id?: number;
   name: string;
+  sortOrder?: number;
   isActive: boolean;
 }
 
 export interface RestaurantForm {
   readonly id?: string;
   name: string;
+  walletPct?: number;
   isActive: boolean;
 }
 

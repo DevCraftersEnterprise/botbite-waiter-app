@@ -58,7 +58,7 @@ export class ShellComponent implements OnInit {
     {
       label: 'Categorías',
       to: '/dashboard/categories',
-      requiredRole: 'admin',
+      requiredRole: 'client',
       icon: this.iconsService.categories,
     },
     {

@@ -76,6 +76,7 @@ export class MenuItemsComponent {
   protected readonly productName = signal<string>('');
   protected readonly productPrice = signal<number>(0);
   protected readonly productShouldRecommend = signal<boolean>(false);
+  protected readonly productVariantGroup = signal<string>('');
   protected readonly productSearchTerm = signal<string>('');
   protected readonly saving = signal(false);
   protected readonly editingItemId = signal<string | null>(null);
@@ -247,7 +248,7 @@ export class MenuItemsComponent {
       this.productsService.findAllProductsByRestaurant(rid, {
         limit: 1000,
       }),
-      this.categoryService.list({ limit: 100 }),
+      this.categoryService.list({ restaurantId: rid, limit: 100 }),
     ]).subscribe({
       next: () => {
         // Actualizar stableTotal después de recibir los datos
@@ -291,6 +292,7 @@ export class MenuItemsComponent {
     this.selectedCategoryId.set('');
     this.productPrice.set(0);
     this.productShouldRecommend.set(false);
+    this.productVariantGroup.set('');
     this.productSearchTerm.set('');
     this.editingItemId.set(null);
     this.showModal.set(true);
@@ -303,6 +305,7 @@ export class MenuItemsComponent {
     this.productName.set(menuItem.product.name);
     this.productPrice.set(menuItem.price);
     this.productShouldRecommend.set(menuItem.shouldRecommend);
+    this.productVariantGroup.set(menuItem.variantGroup ?? '');
     this.selectedProductIds.set([]);
     this.productSearchTerm.set('');
     this.showModal.set(true);
@@ -315,6 +318,7 @@ export class MenuItemsComponent {
     this.selectedCategoryId.set('');
     this.productPrice.set(0);
     this.productShouldRecommend.set(false);
+    this.productVariantGroup.set('');
     this.productSearchTerm.set('');
     this.editingItemId.set(null);
   }
@@ -349,10 +353,16 @@ export class MenuItemsComponent {
     this.productPrice.set(isNaN(value) ? 0 : value);
   }
 
+  protected updateVariantGroup(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.productVariantGroup.set(target.value);
+  }
+
   protected saveProducts(): void {
     const mid = this.menuId();
     const categoryId = this.selectedCategoryId();
     const price = this.productPrice();
+    const variantGroup = this.productVariantGroup().trim().toUpperCase() || null;
 
     if (!mid || !categoryId || price <= 0) {
       return;
@@ -370,6 +380,7 @@ export class MenuItemsComponent {
       const updateDto: UpdateMenuItemDto = {
         categoryId: parseInt(categoryId),
         price,
+        variantGroup,
       };
 
       this.menusService.updateMenuItem(mid, itemId, updateDto).subscribe({
@@ -396,6 +407,7 @@ export class MenuItemsComponent {
           categoryId: parseInt(categoryId),
           price,
           isActive: true,
+          variantGroup,
         })
       );
 

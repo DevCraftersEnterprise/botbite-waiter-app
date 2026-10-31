@@ -226,6 +226,23 @@
         />
       </div>
 
+      <!-- Familia: variantes del mismo platillo -->
+      <div class="space-y-2">
+        <label for="variantGroup" class="text-sm font-medium text-neutral-700">Familia</label>
+        <input
+          id="variantGroup"
+          type="text"
+          maxlength="100"
+          class="w-full rounded-xl border border-black/10 px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+          [value]="productVariantGroup()"
+          (input)="updateVariantGroup($event)"
+          placeholder="Ej: PIZZA BONELESS"
+        />
+        <p class="text-xs text-neutral-500">
+          Usa la misma familia en las variantes de un platillo para que el mesero pregunte cuál quieren.
+        </p>
+      </div>
+
       <!-- Lista de Productos Disponibles -->
       @if (!isEditing()) {
         <div class="space-y-2">
