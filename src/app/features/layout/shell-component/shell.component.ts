@@ -89,13 +89,13 @@ export class ShellComponent implements OnInit {
       label: 'Órdenes',
       to: '/dashboard/orders',
       requiredRole: 'user',
-      icon: this.iconsService.bell,
+      icon: this.iconsService.orders,
     },
     {
       label: 'Notificaciones',
       to: '/dashboard/notifications',
       requiredRole: 'user',
-      icon: this.iconsService.whatsapp,
+      icon: this.iconsService.bell,
     },
   ];
 

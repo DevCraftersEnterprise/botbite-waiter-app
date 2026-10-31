@@ -93,6 +93,7 @@
                   class="btn-table-warning"
                   (click)="openEdit(restaurant)"
                   [attr.aria-label]="'Editar restaurante ' + restaurant.name"
+                  [title]="'Editar restaurante ' + restaurant.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon [img]="iconsService.edit" size="15" color="orange"></lucide-icon>
@@ -104,6 +105,7 @@
                     class="btn-table-danger"
                     (click)="confirmDisable(restaurant)"
                     [attr.aria-label]="'Deshabilitar restaurante ' + restaurant.name"
+                    [title]="'Deshabilitar restaurante ' + restaurant.name"
                   >
                     <div class="flex items-center justify-center gap-1">
                       <lucide-icon [img]="iconsService.disable" size="15" color="red"></lucide-icon>
@@ -190,7 +192,7 @@
           (change)="updateFormActive($event)"
           class="rounded"
         />
-        <label for="active" class="text-sm">Activa</label>
+        <label for="active" class="text-sm">Activo</label>
       </div>
 
       @if (!isFormValid() && form().name) {

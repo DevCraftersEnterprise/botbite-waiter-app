@@ -3,8 +3,11 @@ import { io, Socket } from 'socket.io-client';
 import { Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+export type NotificationType = 'order' | 'bill' | 'pay_with_waiter' | 'payment' | 'alert' | 'invoice';
+
 export interface CashierNotification {
   id: string;
+  type: NotificationType;
   message: string;
   phoneNumber?: string;
   branchId?: string;

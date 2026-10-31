@@ -63,7 +63,7 @@
     <!-- TOPBAR -->
     <header class="sticky top-0 z-20 border-b border-black/10 bg-white/95 backdrop-blur">
       <div class="flex h-14 min-w-0 items-center justify-between gap-3 px-4">
-        <div class="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto">
+        <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <button
             class="btn-secondary shrink-0 lg:hidden"
             (click)="toggle()"
@@ -76,9 +76,9 @@
           <!-- Selector de restaurantes -->
           @if (restaurants().length > 0) {
             @if (restaurants().length > 1) {
-              <div class="flex shrink-0 items-center gap-2">
+              <div class="flex min-w-0 items-center gap-2">
                 <label
-                  class="hidden text-sm font-medium text-neutral-700 sm:inline"
+                  class="hidden text-sm font-medium whitespace-nowrap text-neutral-700 sm:inline"
                   for="restaurantSelect"
                 >
                   Restaurante:
@@ -107,9 +107,9 @@
           @if (branches().length > 0) {
             <span class="hidden text-neutral-300 select-none sm:inline">|</span>
             @if (branches().length > 1) {
-              <div class="flex shrink-0 items-center gap-2">
+              <div class="flex min-w-0 items-center gap-2">
                 <label
-                  class="hidden text-sm font-medium text-neutral-700 sm:inline"
+                  class="hidden text-sm font-medium whitespace-nowrap text-neutral-700 sm:inline"
                   for="branchSelect"
                 >
                   Sucursal:
@@ -127,7 +127,7 @@
                 </select>
               </div>
             } @else {
-              <div class="truncate text-sm text-neutral-700">
+              <div class="max-w-24 shrink-0 truncate text-sm text-neutral-700 sm:max-w-none">
                 <span class="hidden font-medium sm:inline">Sucursal: </span>
                 <span class="text-neutral-900">{{ selectedBranch()?.name }}</span>
               </div>
@@ -149,7 +149,7 @@
 
             <!-- Badge del rol -->
             @if (getBestRole(authService.user()?.roles); as userRole) {
-              <app-role-badge [role]="userRole" />
+              <app-role-badge class="hidden sm:inline-flex" [role]="userRole" />
             }
           </div>
 

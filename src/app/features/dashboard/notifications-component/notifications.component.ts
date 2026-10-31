@@ -1,10 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { Check, LucideAngularModule, RotateCcw } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
 import { Subscription } from 'rxjs';
 import { OrgService } from '../../../core/services/org.service';
-import { CashierNotification, SocketService } from '../../../core/services/socket.service';
+import {
+  CashierNotification,
+  NotificationType,
+  SocketService,
+} from '../../../core/services/socket.service';
 import { TitleComponent } from '../../../shared/components/title/title';
 import { OrdersService } from '../../../core/services/orders.service';
 
@@ -14,7 +26,7 @@ import { OrdersService } from '../../../core/services/orders.service';
   templateUrl: './notifications.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotificationsComponent implements OnInit, OnDestroy {
+export class NotificationsComponent implements OnDestroy {
   protected readonly orgService = inject(OrgService);
   private readonly ordersService = inject(OrdersService);
   private readonly toastrService = inject(ToastrService);
@@ -22,30 +34,109 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
   private notificationSubscription?: Subscription;
 
+  /** Qué se ve en cada tipo de aviso. */
+  protected readonly types: Record<
+    NotificationType,
+    { label: string; chip: string; accent: string }
+  > = {
+    order: {
+      label: 'Comanda',
+      chip: 'border-amber-200 bg-amber-100 text-amber-800',
+      accent: 'border-l-amber-400',
+    },
+    bill: {
+      label: 'Cuenta',
+      chip: 'border-blue-200 bg-blue-100 text-blue-800',
+      accent: 'border-l-blue-400',
+    },
+    pay_with_waiter: {
+      label: 'Paga con mesero',
+      chip: 'border-purple-200 bg-purple-100 text-purple-800',
+      accent: 'border-l-purple-400',
+    },
+    payment: {
+      label: 'Pago',
+      chip: 'border-green-200 bg-green-100 text-green-800',
+      accent: 'border-l-green-400',
+    },
+    alert: {
+      label: 'Alerta',
+      chip: 'border-red-200 bg-red-100 text-red-800',
+      accent: 'border-l-red-500',
+    },
+    invoice: {
+      label: 'Factura',
+      chip: 'border-neutral-200 bg-neutral-100 text-neutral-700',
+      accent: 'border-l-neutral-400',
+    },
+  };
+  protected readonly typeOptions = Object.entries(this.types).map(([value, { label }]) => ({
+    value,
+    label,
+  }));
+  protected readonly typeFilter = signal<string>('');
+
   activeNotifications = signal<CashierNotification[]>([]);
   inactiveNotifications = signal<CashierNotification[]>([]);
   isLoading = signal<boolean>(true);
 
+  protected readonly visibleActive = computed(() => this.applyFilter(this.activeNotifications()));
+  protected readonly visibleInactive = computed(() =>
+    this.applyFilter(this.inactiveNotifications())
+  );
+
   readonly checkIcon = Check;
   readonly rotateCcwIcon = RotateCcw;
 
-  ngOnInit(): void {
-    const branchId = this.orgService.selectedBranchId();
-
-    if (!branchId) {
-      this.toastrService.error('No se ha seleccionado una sucursal.');
-      return;
-    }
-
-    this.loadNotifications(branchId);
-
-    this.socketService.joinBranch(branchId);
-
+  constructor() {
     this.notificationSubscription = this.socketService
       .getNotificationUpdates()
       .subscribe((update) => {
         this.handleNotificationUpdate(update.notification);
       });
+
+    // La sucursal puede resolverse después de abrir la pantalla (al recargar) o
+    // cambiar mientras está abierta.
+    effect(() => {
+      const branchId = this.orgService.selectedBranchId();
+
+      if (!branchId) {
+        this.activeNotifications.set([]);
+        this.inactiveNotifications.set([]);
+        this.isLoading.set(this.orgService.loadingBranches());
+        return;
+      }
+
+      this.loadNotifications(branchId);
+      this.socketService.joinBranch(branchId);
+    });
+  }
+
+  private applyFilter(notifications: CashierNotification[]): CashierNotification[] {
+    const type = this.typeFilter();
+    return type ? notifications.filter((n) => n.type === type) : notifications;
+  }
+
+  protected updateTypeFilter(event: Event): void {
+    this.typeFilter.set((event.target as HTMLSelectElement).value);
+  }
+
+  /** Avisa con un tono: caja no siempre está viendo la pantalla. */
+  private playAlert(): void {
+    try {
+      const audio = new AudioContext();
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+
+      oscillator.frequency.value = 880;
+      gain.gain.value = 0.05;
+      oscillator.connect(gain).connect(audio.destination);
+      oscillator.start();
+      oscillator.stop(audio.currentTime + 0.2);
+      oscillator.onended = () => void audio.close();
+    } catch {
+      // El navegador puede bloquear el audio hasta que el usuario interactúe.
+    }
   }
 
   private loadNotifications(branchId: string): void {
@@ -76,6 +167,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       } else {
         this.activeNotifications.set([notification, ...activeList]);
         this.toastrService.info(notification.message, 'Nueva notificación');
+        this.playAlert();
       }
 
       this.removeFromInactive(notification.id);

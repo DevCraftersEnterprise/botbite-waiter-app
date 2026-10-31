@@ -1,32 +1,72 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment';
 import { map, Observable } from 'rxjs';
-import { Order, OrderListResponse } from './types/orders.type';
-import { ConversationsListResponse } from './types/conversations.types';
+import { environment } from '../../../environments/environment';
+import { OrgService } from './org.service';
 import { CashierNotification } from './socket.service';
+import {
+  CatalogItem,
+  OrderAccount,
+  OrdersSummary,
+  RoundItemInput,
+  RoundStatus,
+} from './types/orders.type';
 
 @Injectable({
   providedIn: 'root',
 })
 export class OrdersService {
   private http = inject(HttpClient);
+  private orgService = inject(OrgService);
   apiUrl = environment.apiBaseUrl;
 
-  getAll(opts: { branchId: string; date: string }): Observable<Order[]> {
-    const params = new HttpParams().set('branchId', opts.branchId).set('date', opts.date);
-
-    return this.http
-      .get<OrderListResponse>(`${this.apiUrl}/orders`, { params })
-      .pipe(map((res: OrderListResponse) => res.orders));
-  }
-
-  activeOrders(branchId: string): Observable<ConversationsListResponse> {
+  activeOrders(branchId: string): Observable<OrderAccount[]> {
     const params = new HttpParams().set('branchId', branchId);
 
-    return this.http.get<ConversationsListResponse>(`${this.apiUrl}/messages/conversations`, {
-      params,
-    });
+    return this.http
+      .get<{ orders: OrderAccount[] }>(`${this.apiUrl}/orders/active`, { params })
+      .pipe(map((response) => response.orders));
+  }
+
+  summary(branchId: string): Observable<OrdersSummary> {
+    const params = new HttpParams().set('branchId', branchId);
+
+    return this.http.get<OrdersSummary>(`${this.apiUrl}/orders/summary`, { params });
+  }
+
+  catalog(branchId: string): Observable<CatalogItem[]> {
+    const restaurantId = this.orgService.selectedRestaurantId();
+
+    return this.http
+      .get<{ catalog: CatalogItem[] }>(
+        `${this.apiUrl}/branches/${restaurantId}/${branchId}/catalog`
+      )
+      .pipe(map((response) => response.catalog));
+  }
+
+  openTab(tab: {
+    branchId: string;
+    table: string;
+    customerName?: string;
+    items: RoundItemInput[];
+  }): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/orders/tabs`, tab);
+  }
+
+  addRound(orderId: string, items: RoundItemInput[]): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/orders/${orderId}/rounds`, { items });
+  }
+
+  updateRoundStatus(roundId: string, status: RoundStatus): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/orders/rounds/${roundId}`, { status });
+  }
+
+  settle(orderId: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/orders/${orderId}/settle`, {});
+  }
+
+  cancel(orderId: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/orders/${orderId}/cancel`, {});
   }
 
   getNotificationsByBranch(branchId: string): Observable<{

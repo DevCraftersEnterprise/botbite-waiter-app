@@ -15,8 +15,7 @@ import { IconsService } from '../../../core/services/icons.service';
 import { OrdersService } from '../../../core/services/orders.service';
 import { OrgService } from '../../../core/services/org.service';
 import { Branch } from '../../../core/services/types/branches.types';
-import { Order } from '../../../core/services/types/orders.type';
-import { todayYYYYMMDD } from '../../../shared/utils/date.utils';
+import { OrdersSummary } from '../../../core/services/types/orders.type';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 
 interface MetricCard {
@@ -44,16 +43,40 @@ export class HomeComponent {
   protected readonly showQrModal = signal<boolean>(false);
   protected readonly qrCustomText = signal<string>('');
 
-  private readonly todayCount = signal<number>(0);
+  private readonly summary = signal<OrdersSummary | null>(null);
   protected readonly branchQrUrl = signal<string>('');
 
-  protected readonly metrics = computed<MetricCard[]>(() => [
-    {
-      label: 'Órdenes totales',
-      value: this.todayCount(),
-      icon: this.iconsService.orders,
-    },
-  ]);
+  private readonly money = new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+  });
+
+  protected readonly metrics = computed<MetricCard[]>(() => {
+    const summary = this.summary();
+
+    return [
+      {
+        label: 'Cuentas de hoy',
+        value: summary?.accounts ?? 0,
+        icon: this.iconsService.orders,
+      },
+      {
+        label: 'Mesas abiertas',
+        value: summary?.openAccounts ?? 0,
+        icon: this.iconsService.timer,
+      },
+      {
+        label: 'Ventas de hoy',
+        value: this.money.format(summary?.sales ?? 0),
+        icon: this.iconsService.cash,
+      },
+      {
+        label: 'Ticket promedio',
+        value: this.money.format(summary?.averageTicket ?? 0),
+        icon: this.iconsService.bill,
+      },
+    ];
+  });
 
   constructor() {
     effect(() => {
@@ -76,27 +99,17 @@ export class HomeComponent {
   private fetchToday(branchId: string): void {
     this.loadingToday.set(true);
 
-    const date = todayYYYYMMDD();
     this.ordersService
-      .getAll({ branchId, date })
+      .summary(branchId)
       .pipe(
-        catchError(() => {
-          this.resetMetrics();
-          return of([]);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loadingToday.set(false))
       )
-      .subscribe((orders) => {
-        this.updateMetrics(orders);
-      });
-  }
-
-  private updateMetrics(orders: Order[]): void {
-    this.todayCount.set(orders.length);
+      .subscribe((summary) => this.summary.set(summary));
   }
 
   private resetMetrics(): void {
-    this.todayCount.set(0);
+    this.summary.set(null);
   }
 
   generateBranchQr(): void {

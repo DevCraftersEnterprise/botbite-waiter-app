@@ -120,6 +120,9 @@
                     [attr.aria-label]="
                       (row.isActive ? 'Desactivar' : 'Activar') + ' usuario ' + row.email
                     "
+                    [title]="
+                      (row.isActive ? 'Desactivar' : 'Activar') + ' usuario ' + row.email
+                    "
                   >
                     <div class="flex items-center justify-center gap-1">
                       <lucide-icon
@@ -138,6 +141,7 @@
                         class="btn-table-primary"
                         (click)="confirmAdminRoleChange(row, 'add')"
                         [attr.aria-label]="'Hacer administrador a ' + row.email"
+                        [title]="'Hacer administrador a ' + row.email"
                       >
                         <div class="flex items-center justify-center gap-1">
                           <lucide-icon
@@ -153,6 +157,7 @@
                         class="btn-table-warning"
                         (click)="confirmAdminRoleChange(row, 'remove')"
                         [attr.aria-label]="'Quitar rol de administrador a ' + row.email"
+                        [title]="'Quitar rol de administrador a ' + row.email"
                       >
                         <div class="flex items-center justify-center gap-1">
                           <lucide-icon
