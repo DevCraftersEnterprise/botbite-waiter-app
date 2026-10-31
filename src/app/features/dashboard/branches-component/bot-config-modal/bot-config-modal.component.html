@@ -233,8 +233,8 @@
               <code class="block rounded-lg bg-white px-2 py-1 text-xs break-all" data-testid="bot-secret">{{
                 secret
               }}</code>
-              <button type="button" class="btn-table-neutral" (click)="copySecret()">
-                <span class="text-xs">Copiar</span>
+              <button type="button" class="btn-small bg-white" (click)="copySecret()">
+                Copiar
               </button>
             </div>
           }
@@ -269,7 +269,7 @@
                     @if (key.revokedAt) {
                       · Revocada
                     } @else if (key.lastUsedAt) {
-                      · Último uso {{ key.lastUsedAt | date: 'short' }}
+                      · Último uso {{ key.lastUsedAt | date: 'dd/MM/yy HH:mm' }}
                     } @else {
                       · Sin usar
                     }
@@ -278,14 +278,19 @@
                 @if (!key.revokedAt) {
                   <button
                     type="button"
-                    class="btn-table-danger"
+                    class="btn-small-danger shrink-0"
                     [disabled]="revokingKeyId() === key.id"
                     [attr.aria-label]="'Revocar la llave ' + key.name"
                     (click)="revokeKey(key)"
                   >
-                    <div class="flex items-center justify-center gap-1">
-                      <lucide-icon [img]="iconsService.disable" size="15" color="red"></lucide-icon>
-                      <span class="text-xs">Revocar</span>
+                    <div class="flex items-center justify-center gap-1.5">
+                      <lucide-icon
+                        [img]="iconsService.disable"
+                        size="14"
+                        color="currentColor"
+                        aria-hidden="true"
+                      ></lucide-icon>
+                      <span>Revocar</span>
                     </div>
                   </button>
                 }

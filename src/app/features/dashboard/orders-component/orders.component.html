@@ -106,16 +106,18 @@
                     >
                       Entregar
                     </button>
-                    <button
-                      class="btn-small-danger"
-                      [disabled]="updatingRoundId() === round.id"
-                      [attr.aria-label]="
-                        'Cancelar ronda ' + round.number + ' de la mesa ' + account.table
-                      "
-                      (click)="setRoundStatus(round, 'cancelled')"
-                    >
-                      Cancelar
-                    </button>
+                    @if (account.status !== 'paid') {
+                      <button
+                        class="btn-small-danger"
+                        [disabled]="updatingRoundId() === round.id"
+                        [attr.aria-label]="
+                          'Cancelar ronda ' + round.number + ' de la mesa ' + account.table
+                        "
+                        (click)="setRoundStatus(round, 'cancelled')"
+                      >
+                        Cancelar
+                      </button>
+                    }
                   </div>
                 }
               </section>
@@ -123,38 +125,64 @@
           </div>
 
           <footer class="space-y-3 border-t border-black/10 pt-3">
-            <div class="flex items-center justify-between">
-              <p class="font-medium text-black">Total</p>
-              <p class="text-lg font-semibold text-black">
-                {{ account.total | currency: 'MXN' : 'symbol-narrow' }}
-              </p>
-            </div>
+            <dl class="space-y-1">
+              @if (account.walletDiscount > 0 || account.tip > 0) {
+                <div class="flex items-center justify-between text-xs text-neutral-500">
+                  <dt>Subtotal</dt>
+                  <dd>{{ account.subtotal | currency: 'MXN' : 'symbol-narrow' }}</dd>
+                </div>
+                @if (account.walletDiscount > 0) {
+                  <div class="flex items-center justify-between text-xs text-neutral-500">
+                    <dt>Monedero</dt>
+                    <dd>-{{ account.walletDiscount | currency: 'MXN' : 'symbol-narrow' }}</dd>
+                  </div>
+                }
+                @if (account.tip > 0) {
+                  <div class="flex items-center justify-between text-xs text-neutral-500">
+                    <dt>Propina</dt>
+                    <dd>{{ account.tip | currency: 'MXN' : 'symbol-narrow' }}</dd>
+                  </div>
+                }
+              }
+              <div class="flex items-center justify-between">
+                <dt class="font-medium text-black">Total</dt>
+                <dd class="text-lg font-semibold text-black">
+                  {{ account.amountDue | currency: 'MXN' : 'symbol-narrow' }}
+                </dd>
+              </div>
+            </dl>
 
-            <div class="flex flex-wrap gap-2">
-              @if (canAddRound(account)) {
+            @if (account.status === 'paid') {
+              <p class="rounded-lg bg-green-50 px-3 py-2 text-xs text-green-800">
+                Ya pagó en línea. Solo falta entregar.
+              </p>
+            } @else {
+              <div class="flex flex-wrap gap-2">
+                @if (canAddRound(account)) {
+                  <button
+                    class="btn-small"
+                    [attr.aria-label]="'Agregar ronda a la mesa ' + account.table"
+                    (click)="openAddRound(account)"
+                  >
+                    Agregar ronda
+                  </button>
+                }
                 <button
                   class="btn-small"
-                  [attr.aria-label]="'Agregar ronda a la mesa ' + account.table"
-                  (click)="openAddRound(account)"
+                  [attr.aria-label]="'Cobrar la mesa ' + account.table"
+                  (click)="askAction(account, 'settle')"
                 >
-                  Agregar ronda
+                  Marcar cobrada
                 </button>
-              }
-              <button
-                class="btn-small"
-                [attr.aria-label]="'Cobrar la mesa ' + account.table"
-                (click)="askAction(account, 'settle')"
-              >
-                Marcar cobrada
-              </button>
-              <button
-                class="btn-small-danger"
-                [attr.aria-label]="'Cancelar la cuenta de la mesa ' + account.table"
-                (click)="askAction(account, 'cancel')"
-              >
-                Cancelar cuenta
-              </button>
-            </div>
+                <button
+                  class="btn-small-danger"
+                  [attr.aria-label]="'Cancelar la cuenta de la mesa ' + account.table"
+                  (click)="askAction(account, 'cancel')"
+                >
+                  Cancelar cuenta
+                </button>
+              </div>
+            }
           </footer>
         </article>
       } @empty {
@@ -190,7 +218,7 @@
       @if (pending.action === 'settle') {
         <p>
           ¿La mesa {{ pending.account.table }} ya pagó
-          {{ pending.account.total | currency: 'MXN' : 'symbol-narrow' }}?
+          {{ pending.account.amountDue | currency: 'MXN' : 'symbol-narrow' }}?
         </p>
       } @else {
         <p>¿Seguro que quieres cancelar la cuenta de la mesa {{ pending.account.table }}?</p>
