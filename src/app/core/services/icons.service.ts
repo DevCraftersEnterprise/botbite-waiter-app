@@ -3,7 +3,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Bot,
+  Banknote,
   CirclePlus,
+  CreditCard,
+  FileText,
+  ReceiptText,
+  Timer,
+  TriangleAlert,
   Download,
   Hand,
   House,
@@ -53,6 +59,12 @@ export class IconsService {
   readonly products = LayoutList;
   readonly download = Download;
   readonly orders = ScrollText;
+  readonly bill = ReceiptText;
+  readonly cash = Banknote;
+  readonly card = CreditCard;
+  readonly alert = TriangleAlert;
+  readonly invoice = FileText;
+  readonly timer = Timer;
   readonly message = MessagesSquare;
   readonly assistant = Bot;
   readonly hand = Hand;

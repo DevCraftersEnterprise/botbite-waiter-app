@@ -127,6 +127,24 @@
     @apply hover:animate-scale w-12 cursor-pointer rounded-lg border border-black/10 px-2 py-1 transition-all hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:animate-none 2xl:w-28;
   }
 
+  /* Acciones dentro de tarjetas */
+  .btn-small {
+    @apply rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium text-black transition-all hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-small-danger {
+    @apply rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-stepper {
+    @apply flex size-7 items-center justify-center rounded-lg border border-black/10 text-sm text-black transition-all hover:bg-black/5;
+  }
+
+  /* Etiquetas de estado */
+  .status-chip {
+    @apply inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
+  }
+
   /* Inputs */
   .input {
     @apply w-full rounded-xl border border-black/10 px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none;

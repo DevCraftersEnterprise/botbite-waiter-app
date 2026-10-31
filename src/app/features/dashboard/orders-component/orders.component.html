@@ -1,64 +1,200 @@
 <div class="section-spacing">
   <div class="page-header">
-    <shared-title title="Órdenes" description="Lista de órdenes activas" />
+    <shared-title title="Órdenes" description="Mesas con cuenta abierta en la sucursal" />
+
+    <div class="actions-bar">
+      <button class="btn-primary btn-full" (click)="openNewTab()" aria-label="Abrir cuenta">
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon
+            [img]="iconsService.add"
+            size="15"
+            color="white"
+            aria-hidden="true"
+          ></lucide-icon>
+          <span>Abrir cuenta</span>
+        </div>
+      </button>
+    </div>
   </div>
 
-  <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-    @for (orders of activeOrders(); track orders.id) {
-      <div class="card animate-fade-in animate-duration-500 font-mono text-sm">
-        <!-- Header del ticket -->
-        <div class="mb-4 flex items-center gap-2 border-b-2 border-dashed border-black/20 pb-3">
-          <lucide-icon [img]="iconsService.bell" size="20" color="orange" />
-          <p class="text-xs tracking-wide text-neutral-600 uppercase">
-            Orden de {{ orders.customer.name }}
-          </p>
-        </div>
-
-        <!-- Ubicación -->
-        <div class="mb-3 border-b border-dashed border-black/10 pb-2">
-          <p class="text-xs text-neutral-500 uppercase">Ubicación</p>
-          <p class="font-semibold">{{ orders.location }}</p>
-        </div>
-
-        <!-- Detalles de la orden -->
-        <div class="mb-3 border-b-2 border-dashed border-black/20 pb-2">
-          <p class="mb-2 text-xs text-neutral-500 uppercase">Detalles</p>
-          @for (
-            details of transformLastOrderSentToCashier(orders.lastOrderSentToCashier);
-            track $index
-          ) {
-            <div class="mb-2">
-              <div class="mb-1 flex items-start justify-between">
-                <div class="flex-1">
-                  <p class="font-medium">{{ details.quantity }}x {{ details.name }}</p>
-                </div>
-                <p class="ml-2 font-semibold">${{ details.price.toFixed(2) }}</p>
-              </div>
-              @if (details.notes !== '') {
-                <p class="ml-4 text-xs text-neutral-600 italic">• {{ details.notes }}</p>
-              }
+  @if (loading()) {
+    <div class="flex items-center justify-center py-12">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-black/10 border-t-black"></div>
+    </div>
+  } @else {
+    <div class="grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+      @for (account of accounts(); track account.id) {
+        <article class="card animate-fade-in animate-duration-300 space-y-4 !p-5">
+          <header class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="truncate text-lg font-semibold text-black">Mesa {{ account.table }}</p>
+              <p class="truncate text-xs text-neutral-500">
+                {{ account.customerName || 'Sin nombre' }} · desde
+                {{ account.openedAt | date: 'HH:mm' }}
+              </p>
             </div>
-          }
-        </div>
+            <span class="status-chip" [class]="orderStatus[account.status].classes">
+              {{ orderStatus[account.status].label }}
+            </span>
+          </header>
 
-        <!-- Total -->
-        <div class="pt-2">
-          <div class="flex items-center justify-between">
-            <p class="text-sm font-bold uppercase">Total</p>
-            <p class="text-lg font-bold">
-              ${{ calculateTotal(orders.lastOrderSentToCashier).toFixed(2) }}
+          @if (account.source === 'staff') {
+            <p class="text-xs text-neutral-500">La abrió el personal</p>
+          } @else if (!account.locationVerified) {
+            <p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Por confirmar: no se verificó la ubicación del cliente.
             </p>
+          }
+
+          <div class="space-y-3">
+            @for (round of account.rounds; track round.id) {
+              <section
+                class="rounded-xl border border-black/10 p-3"
+                [class.opacity-50]="round.status === 'cancelled'"
+              >
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <p class="font-medium text-black">
+                    Ronda {{ round.number }}
+                    <span class="font-normal text-neutral-400">
+                      · {{ round.sentAt | date: 'HH:mm' }}
+                    </span>
+                  </p>
+                  <span class="status-chip" [class]="roundStatus[round.status].classes">
+                    {{ roundStatus[round.status].label }}
+                  </span>
+                </div>
+
+                <ul class="space-y-1.5">
+                  @for (item of round.items; track item.id) {
+                    <li>
+                      <div class="flex items-start justify-between gap-3">
+                        <p class="min-w-0 text-black">
+                          <span class="font-medium">{{ item.quantity }}x</span> {{ item.name }}
+                        </p>
+                        <p class="whitespace-nowrap text-neutral-600">
+                          {{ lineTotal(item) | currency: 'MXN' : 'symbol-narrow' }}
+                        </p>
+                      </div>
+                      @if (item.note) {
+                        <p class="text-xs text-neutral-500 italic">{{ item.note }}</p>
+                      }
+                    </li>
+                  }
+                </ul>
+
+                @if (canAdvance(round)) {
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    @if (round.status === 'new') {
+                      <button
+                        class="btn-small"
+                        [disabled]="updatingRoundId() === round.id"
+                        [attr.aria-label]="
+                          'Preparar ronda ' + round.number + ' de la mesa ' + account.table
+                        "
+                        (click)="setRoundStatus(round, 'preparing')"
+                      >
+                        Preparar
+                      </button>
+                    }
+                    <button
+                      class="btn-small"
+                      [disabled]="updatingRoundId() === round.id"
+                      [attr.aria-label]="
+                        'Entregar ronda ' + round.number + ' de la mesa ' + account.table
+                      "
+                      (click)="setRoundStatus(round, 'delivered')"
+                    >
+                      Entregar
+                    </button>
+                    <button
+                      class="btn-small-danger"
+                      [disabled]="updatingRoundId() === round.id"
+                      [attr.aria-label]="
+                        'Cancelar ronda ' + round.number + ' de la mesa ' + account.table
+                      "
+                      (click)="setRoundStatus(round, 'cancelled')"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                }
+              </section>
+            }
           </div>
+
+          <footer class="space-y-3 border-t border-black/10 pt-3">
+            <div class="flex items-center justify-between">
+              <p class="font-medium text-black">Total</p>
+              <p class="text-lg font-semibold text-black">
+                {{ account.total | currency: 'MXN' : 'symbol-narrow' }}
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              @if (canAddRound(account)) {
+                <button
+                  class="btn-small"
+                  [attr.aria-label]="'Agregar ronda a la mesa ' + account.table"
+                  (click)="openAddRound(account)"
+                >
+                  Agregar ronda
+                </button>
+              }
+              <button
+                class="btn-small"
+                [attr.aria-label]="'Cobrar la mesa ' + account.table"
+                (click)="askAction(account, 'settle')"
+              >
+                Cobrada
+              </button>
+              <button
+                class="btn-small-danger"
+                [attr.aria-label]="'Cancelar la cuenta de la mesa ' + account.table"
+                (click)="askAction(account, 'cancel')"
+              >
+                Cancelar cuenta
+              </button>
+            </div>
+          </footer>
+        </article>
+      } @empty {
+        <div
+          class="animate-fade-in animate-duration-500 col-span-full rounded-2xl border border-black/10 p-6 text-center"
+          role="status"
+        >
+          <p>No hay cuentas abiertas en este momento.</p>
         </div>
-      </div>
-    } @empty {
-      <div
-        class="animate-fade-in animate-duration-500 col-span-full rounded-2xl border border-black/10 p-6 text-center text-neutral-500"
-        role="alert"
-        aria-live="polite"
-      >
-        No hay órdenes activas en este momento.
-      </div>
+      }
+    </div>
+  }
+
+  <app-tab-modal
+    [isOpen]="tabOpen()"
+    [account]="tabAccount()"
+    (closed)="closeTab()"
+    (saved)="tabSaved()"
+  />
+
+  <app-modal
+    [isOpen]="!!pendingAction()"
+    [title]="confirmTitle()"
+    [maxWidth]="'max-w-sm'"
+    [showActions]="true"
+    [loading]="applyingAction()"
+    confirmText="Confirmar"
+    (close)="closeAction()"
+    (cancel)="closeAction()"
+    (confirm)="applyAction()"
+  >
+    @if (pendingAction(); as pending) {
+      @if (pending.action === 'settle') {
+        <p>
+          ¿La mesa {{ pending.account.table }} ya pagó
+          {{ pending.account.total | currency: 'MXN' : 'symbol-narrow' }}?
+        </p>
+      } @else {
+        <p>¿Seguro que quieres cancelar la cuenta de la mesa {{ pending.account.table }}?</p>
+      }
     }
-  </div>
+  </app-modal>
 </div>
