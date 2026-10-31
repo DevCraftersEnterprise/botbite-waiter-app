@@ -129,11 +129,11 @@
 
   /* Acciones dentro de tarjetas */
   .btn-small {
-    @apply rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium text-black transition-all hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply cursor-pointer rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium text-black transition-all hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-small-danger {
-    @apply rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply cursor-pointer rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-stepper {
