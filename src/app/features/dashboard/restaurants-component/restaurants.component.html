@@ -165,6 +165,23 @@
         />
       </div>
 
+      @if (mode() === 'edit') {
+        <div class="space-y-1">
+          <label for="restaurantWalletPct" class="text-sm font-medium">Cashback del monedero (%)</label>
+          <input
+            id="restaurantWalletPct"
+            type="number"
+            min="0"
+            max="100"
+            step="0.5"
+            class="w-full rounded-xl border border-black/10 px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+            [value]="form().walletPct"
+            (input)="updateFormWalletPct($event)"
+          />
+          <p class="text-xs text-neutral-500">Se aplica a todas las sucursales del restaurante.</p>
+        </div>
+      }
+
       <div class="flex items-center gap-2">
         <input
           id="active"

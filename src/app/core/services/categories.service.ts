@@ -15,12 +15,13 @@ export class CategoriesService {
   readonly totalCategories = signal<number>(0);
 
   list(params: {
+    restaurantId: string;
     search?: string;
     isActive?: boolean;
     limit?: number;
     offset?: number;
   }): Observable<CategoryListResponse> {
-    let httpParams = new HttpParams();
+    let httpParams = new HttpParams().set('restaurantId', params.restaurantId);
 
     if (params?.search) {
       httpParams = httpParams.set('search', params.search);
@@ -47,7 +48,9 @@ export class CategoriesService {
 
   create(newCategory: Partial<Category>): Observable<CategoryResponse> {
     return this.http.post<CategoryResponse>(`${this.apiUrl}/categories`, {
+      restaurantId: newCategory.restaurantId,
       name: newCategory.name,
+      sortOrder: newCategory.sortOrder,
       isActive: newCategory.isActive,
     });
   }
@@ -55,6 +58,7 @@ export class CategoriesService {
   update(id: number, updatedCategory: Partial<Category>): Observable<CategoryResponse> {
     return this.http.patch<CategoryResponse>(`${this.apiUrl}/categories/${id}`, {
       name: updatedCategory.name,
+      sortOrder: updatedCategory.sortOrder,
       isActive: updatedCategory.isActive,
     });
   }

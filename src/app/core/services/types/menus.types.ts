@@ -17,6 +17,7 @@ export interface MenuItem {
   product: Product;
   isActive: boolean;
   shouldRecommend: boolean;
+  variantGroup: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -49,6 +50,7 @@ export interface CreateMenuItemDto {
   price: number;
   isActive?: boolean;
   shouldRecommend?: boolean;
+  variantGroup?: string | null;
 }
 
 export interface UpdateMenuItemDto {
@@ -56,4 +58,5 @@ export interface UpdateMenuItemDto {
   price?: number;
   isActive?: boolean;
   shouldRecommend?: boolean;
+  variantGroup?: string | null;
 }

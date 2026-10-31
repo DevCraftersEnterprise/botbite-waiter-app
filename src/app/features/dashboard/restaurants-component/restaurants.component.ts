@@ -154,6 +154,7 @@ export class RestaurantsComponent {
     this.form.set({
       id: restaurant.id,
       name: restaurant.name,
+      walletPct: Number(restaurant.walletPct),
       isActive: restaurant.isActive,
     });
   }
@@ -173,6 +174,7 @@ export class RestaurantsComponent {
     const restaurantData: Partial<Restaurant> = {
       name: formValue.name.trim(),
       isActive: formValue.isActive,
+      ...(this.mode() === 'edit' && { walletPct: formValue.walletPct }),
     };
 
     const operation =
@@ -232,6 +234,11 @@ export class RestaurantsComponent {
   updateFormName(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.form.update((form) => ({ ...form, name: input.value }));
+  }
+
+  updateFormWalletPct(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.form.update((form) => ({ ...form, walletPct: Number(input.value) }));
   }
 
   updateFormActive(event: Event): void {

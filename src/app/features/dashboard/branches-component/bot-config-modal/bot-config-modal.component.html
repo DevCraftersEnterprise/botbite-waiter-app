@@ -1,0 +1,303 @@
+<app-modal
+  [isOpen]="!!branch()"
+  [title]="'Mesero digital · ' + (branch()?.name ?? '')"
+  [maxWidth]="'max-w-3xl'"
+  [showActions]="true"
+  [loading]="saving()"
+  [confirmDisabled]="!canSave()"
+  confirmText="Guardar"
+  (close)="close()"
+  (cancel)="close()"
+  (confirm)="save()"
+>
+  @if (form(); as f) {
+    <form (submit)="$event.preventDefault()" class="max-h-[65vh] space-y-6 overflow-y-auto pr-1">
+      <section class="space-y-3">
+        <h3 class="text-sm font-semibold">Ubicación</h3>
+        <div class="grid gap-3 md:grid-cols-3">
+          <div class="space-y-1">
+            <label for="botLatitude" class="text-sm font-medium">Latitud</label>
+            <input
+              id="botLatitude"
+              class="input"
+              inputmode="decimal"
+              placeholder="27.535038"
+              [value]="f.latitude"
+              (input)="updateText('latitude', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="botLongitude" class="text-sm font-medium">Longitud</label>
+            <input
+              id="botLongitude"
+              class="input"
+              inputmode="decimal"
+              placeholder="-109.954031"
+              [value]="f.longitude"
+              (input)="updateText('longitude', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="botRadius" class="text-sm font-medium">Radio (metros)</label>
+            <input
+              id="botRadius"
+              class="input"
+              type="number"
+              min="10"
+              [value]="f.geofenceMeters"
+              (input)="updateNumber('geofenceMeters', $event)"
+            />
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <input
+            id="botVerifyLocation"
+            type="checkbox"
+            class="rounded"
+            [checked]="f.verifyLocation"
+            (change)="updateVerifyLocation($event)"
+          />
+          <label for="botVerifyLocation" class="text-sm">
+            Verificar que el comensal esté en el restaurante
+          </label>
+        </div>
+        @if (coordinatesMissing()) {
+          <p class="text-sm text-red-600">Para verificar la ubicación captura latitud y longitud.</p>
+        }
+        @if (coordinatesInvalid()) {
+          <p class="text-sm text-red-600">La latitud o la longitud no son válidas.</p>
+        }
+      </section>
+
+      <section class="space-y-3">
+        <h3 class="text-sm font-semibold">Operación</h3>
+        <div class="grid gap-3 md:grid-cols-3">
+          <div class="space-y-1">
+            <label for="botClose" class="text-sm font-medium">Hora de cierre</label>
+            <input
+              id="botClose"
+              class="input"
+              type="time"
+              [value]="f.dailyCloseTime"
+              (input)="updateText('dailyCloseTime', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="botTimezone" class="text-sm font-medium">Zona horaria</label>
+            <input
+              id="botTimezone"
+              class="input"
+              [value]="f.timezone"
+              (input)="updateText('timezone', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="botQrMinutes" class="text-sm font-medium">Vigencia del código QR (min)</label>
+            <input
+              id="botQrMinutes"
+              class="input"
+              type="number"
+              min="1"
+              [value]="f.qrCodeMinutes"
+              (input)="updateNumber('qrCodeMinutes', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="botSessionHours" class="text-sm font-medium">Duración de la sesión (horas)</label>
+            <input
+              id="botSessionHours"
+              class="input"
+              type="number"
+              min="1"
+              [value]="f.sessionHours"
+              (input)="updateNumber('sessionHours', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="botPostSale" class="text-sm font-medium">Posventa (horas)</label>
+            <input
+              id="botPostSale"
+              class="input"
+              type="number"
+              min="0"
+              [value]="f.postSaleHours"
+              (input)="updateNumber('postSaleHours', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label for="botRecommendations" class="text-sm font-medium">Máximo de recomendaciones</label>
+            <input
+              id="botRecommendations"
+              class="input"
+              type="number"
+              min="0"
+              [value]="f.maxRecommendations"
+              (input)="updateNumber('maxRecommendations', $event)"
+            />
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label for="botTables" class="text-sm font-medium">Mesas válidas</label>
+          <input
+            id="botTables"
+            class="input"
+            placeholder="1, 2, A3, TERRAZA 2"
+            [value]="f.validTables"
+            (input)="updateText('validTables', $event)"
+          />
+          <p class="text-xs text-neutral-500">Sepáralas con comas. Vacío acepta cualquier mesa.</p>
+        </div>
+        <div class="space-y-1">
+          <label for="botSurvey" class="text-sm font-medium">URL de la encuesta</label>
+          <input
+            id="botSurvey"
+            class="input"
+            type="url"
+            [value]="f.surveyUrl"
+            (input)="updateText('surveyUrl', $event)"
+          />
+        </div>
+      </section>
+
+      <section class="space-y-3">
+        <h3 class="text-sm font-semibold">Funciones contratadas</h3>
+        <div class="grid gap-2 sm:grid-cols-2">
+          @for (feature of features; track feature.key) {
+            <div class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                class="rounded"
+                [id]="'botFeature-' + feature.key"
+                [checked]="f.features[feature.key]"
+                [disabled]="!isAdmin()"
+                (change)="updateFeature(feature.key, $event)"
+              />
+              <label class="text-sm" [for]="'botFeature-' + feature.key">{{ feature.label }}</label>
+            </div>
+          }
+        </div>
+        @if (!isAdmin()) {
+          <p class="text-xs text-neutral-500">Para cambiarlas, comunícate con BotBite.</p>
+        }
+      </section>
+
+      @if (isAdmin()) {
+        <section class="space-y-3">
+          <h3 class="text-sm font-semibold">Conexión con n8n</h3>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div class="space-y-1">
+              <label for="botSlug" class="text-sm font-medium">Slug</label>
+              <input
+                id="botSlug"
+                class="input"
+                maxlength="60"
+                [value]="f.slug"
+                (input)="updateText('slug', $event)"
+              />
+              <p class="text-xs text-neutral-500">
+                Va en el QR. Si lo cambias, hay que generar e imprimir el QR de nuevo.
+              </p>
+            </div>
+            <div class="space-y-1">
+              <label for="botPhoneId" class="text-sm font-medium">phone_number_id de Meta</label>
+              <input
+                id="botPhoneId"
+                class="input"
+                inputmode="numeric"
+                [value]="f.whatsappPhoneNumberId"
+                (input)="updateText('whatsappPhoneNumberId', $event)"
+              />
+            </div>
+          </div>
+          <div class="space-y-1">
+            <label for="botBaseUrl" class="text-sm font-medium">URL base de los webhooks</label>
+            <input
+              id="botBaseUrl"
+              class="input"
+              type="url"
+              placeholder="https://n8n.ejemplo.com/webhook/mesero-cocorit"
+              [value]="f.botBaseUrl"
+              (input)="updateText('botBaseUrl', $event)"
+            />
+          </div>
+        </section>
+
+        <section class="space-y-3">
+          <h3 class="text-sm font-semibold">Llaves del bot</h3>
+
+          @if (createdSecret(); as secret) {
+            <div class="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
+              <p class="text-sm font-medium text-amber-900">
+                Cópiala ahora: no se volverá a mostrar.
+              </p>
+              <code class="block rounded-lg bg-white px-2 py-1 text-xs break-all" data-testid="bot-secret">{{
+                secret
+              }}</code>
+              <button type="button" class="btn-table-neutral" (click)="copySecret()">
+                <span class="text-xs">Copiar</span>
+              </button>
+            </div>
+          }
+
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <label for="botKeyName" class="sr-only">Nombre de la llave</label>
+            <input
+              id="botKeyName"
+              class="input"
+              maxlength="100"
+              placeholder="Nombre, por ejemplo: n8n Cocorit"
+              [value]="newKeyName()"
+              (input)="updateNewKeyName($event)"
+            />
+            <button
+              type="button"
+              class="cursor-pointer rounded-xl bg-black px-4 py-2 text-sm whitespace-nowrap text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              [disabled]="!newKeyName().trim() || creatingKey()"
+              (click)="createKey()"
+            >
+              {{ creatingKey() ? 'Generando...' : 'Generar llave' }}
+            </button>
+          </div>
+
+          <ul class="divide-y divide-black/5 rounded-xl border border-black/10">
+            @for (key of keys(); track key.id) {
+              <li class="flex items-center justify-between gap-3 px-4 py-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium">{{ key.name }}</p>
+                  <p class="text-xs text-neutral-500">
+                    {{ key.keyPrefix }}…
+                    @if (key.revokedAt) {
+                      · Revocada
+                    } @else if (key.lastUsedAt) {
+                      · Último uso {{ key.lastUsedAt | date: 'short' }}
+                    } @else {
+                      · Sin usar
+                    }
+                  </p>
+                </div>
+                @if (!key.revokedAt) {
+                  <button
+                    type="button"
+                    class="btn-table-danger"
+                    [disabled]="revokingKeyId() === key.id"
+                    [attr.aria-label]="'Revocar la llave ' + key.name"
+                    (click)="revokeKey(key)"
+                  >
+                    <div class="flex items-center justify-center gap-1">
+                      <lucide-icon [img]="iconsService.disable" size="15" color="red"></lucide-icon>
+                      <span class="text-xs">Revocar</span>
+                    </div>
+                  </button>
+                }
+              </li>
+            } @empty {
+              <li class="px-4 py-3 text-sm text-neutral-500">Aún no hay llaves para esta sucursal.</li>
+            }
+          </ul>
+        </section>
+      }
+    </form>
+  } @else {
+    <p class="text-sm text-neutral-500">Cargando configuración...</p>
+  }
+</app-modal>

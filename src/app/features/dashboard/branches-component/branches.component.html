@@ -175,6 +175,17 @@
 
                 <button
                   class="btn-table-neutral"
+                  (click)="botBranch.set(branch)"
+                  [attr.aria-label]="'Mesero digital de ' + branch.name"
+                >
+                  <div class="flex items-center justify-center gap-1">
+                    <lucide-icon [img]="iconsService.assistant" size="15"></lucide-icon>
+                    <span class="hidden text-xs 2xl:inline">Mesero</span>
+                  </div>
+                </button>
+
+                <button
+                  class="btn-table-neutral"
                   (click)="openStaff(branch)"
                   [attr.aria-label]="'Personal de ' + branch.name"
                 >
@@ -338,6 +349,12 @@
   >
     <p class="text-sm text-neutral-600">{{ confirmMessage() }}</p>
   </app-modal>
+
+  <app-bot-config-modal
+    [branch]="botBranch()"
+    (closed)="botBranch.set(null)"
+    (saved)="reload()"
+  />
 
   <app-modal
     [isOpen]="!!staffBranch()"

@@ -1,6 +1,6 @@
 <div class="section-spacing">
   <div class="page-header">
-    <shared-title title="Categorías" description="Administra las categorías de los productos" />
+    <shared-title title="Categorías" description="Administra las categorías del restaurante seleccionado" />
 
     <div class="actions-bar">
       <button
@@ -161,6 +161,18 @@
           maxlength="80"
           aria-required="true"
         />
+      </div>
+      <div class="space-y-1">
+        <label for="categorySortOrder" class="text-sm font-medium">Orden en el menú</label>
+        <input
+          id="categorySortOrder"
+          type="number"
+          min="0"
+          class="w-full rounded-xl border border-black/10 px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+          [value]="form().sortOrder"
+          (input)="updateFormSortOrder($event)"
+        />
+        <p class="text-xs text-neutral-500">Los números menores aparecen primero.</p>
       </div>
       <div class="flex items-center gap-2">
         <input

@@ -3,6 +3,8 @@ import { Pagination } from './common.types';
 export interface Restaurant {
   id: string;
   name: string;
+  slug: string;
+  walletPct: number;
   logoUrl?: string | null;
   isActive: boolean;
   userId: string;
