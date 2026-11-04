@@ -94,6 +94,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'billing',
+        canActivate: [userGuard],
+        loadComponent: () =>
+          import('./features/dashboard/billing-component/billing.component').then(
+            (m) => m.BillingComponent
+          ),
+      },
+      {
         path: 'notifications',
         canActivate: [userGuard],
         loadComponent: () =>

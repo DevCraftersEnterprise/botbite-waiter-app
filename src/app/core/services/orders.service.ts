@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { OrgService } from './org.service';
 import { CashierNotification } from './socket.service';
 import {
+  BillingDay,
   BranchCatalog,
   CatalogItem,
   OrderAccount,
@@ -33,6 +34,14 @@ export class OrdersService {
     const params = new HttpParams().set('branchId', branchId);
 
     return this.http.get<OrdersSummary>(`${this.apiUrl}/orders/summary`, { params });
+  }
+
+  /** Pagos en línea y facturas de un día de la sucursal. Sin fecha, los de hoy. */
+  billing(branchId: string, date?: string): Observable<BillingDay> {
+    let params = new HttpParams().set('branchId', branchId);
+    if (date) params = params.set('date', date);
+
+    return this.http.get<BillingDay>(`${this.apiUrl}/orders/billing`, { params });
   }
 
   /** Platillos y mesas aceptadas de la sucursal. Sin lista, se acepta cualquier mesa. */

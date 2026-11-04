@@ -69,6 +69,50 @@ export interface OrdersSummary {
   paidWithWaiter: number;
 }
 
+export type PaymentStatus = 'approved' | 'incomplete' | 'unmatched';
+
+/** Pago aprobado por Mercado Pago. */
+export interface BillingPayment {
+  id: string;
+  paidAt: string;
+  status: PaymentStatus;
+  orderCode: string | null;
+  table: string | null;
+  consumption: number;
+  tip: number;
+  /** Lo que debía la cuenta. */
+  amount: number;
+  /** Lo que reportó Mercado Pago. */
+  paidAmount: number;
+  paymentType: string | null;
+  cashbackEarned: number;
+  providerPaymentId: string;
+}
+
+/** Factura que timbró el mesero. */
+export interface BillingInvoice {
+  id: string;
+  issuedAt: string;
+  folio: string;
+  /** Folio fiscal del SAT. */
+  uuid: string;
+  orderCode: string | null;
+  table: string | null;
+  rfc: string;
+  legalName: string;
+  cfdiUse: string;
+  paymentForm: string;
+  total: number;
+  emailSent: boolean;
+}
+
+export interface BillingDay {
+  /** YYYY-MM-DD en la zona horaria de la sucursal. */
+  date: string;
+  payments: BillingPayment[];
+  invoices: BillingInvoice[];
+}
+
 export interface CatalogItem {
   id: string;
   name: string;

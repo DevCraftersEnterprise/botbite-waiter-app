@@ -1,0 +1,194 @@
+<div class="section-spacing">
+  <div class="page-header">
+    <shared-title title="Cobros" description="Pagos en línea y facturas de la sucursal" />
+
+    <div class="actions-bar">
+      <label for="billingDate" class="sr-only">Día</label>
+      <input
+        id="billingDate"
+        type="date"
+        class="input md:w-auto"
+        [value]="selectedDate() || today()"
+        [max]="today()"
+        (change)="changeDate($event)"
+      />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-12">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-black/10 border-t-black"></div>
+    </div>
+  } @else if (day(); as day) {
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div class="card !p-5">
+        <p class="text-sm text-neutral-500">Cobrado en línea</p>
+        <p class="mt-1 text-2xl font-semibold text-black">
+          {{ collected() | currency: 'MXN' : 'symbol-narrow' }}
+        </p>
+        <p class="text-xs text-neutral-500">{{ approved().length }} pago(s) aprobado(s)</p>
+      </div>
+      <div class="card !p-5">
+        <p class="text-sm text-neutral-500">Pagos por revisar</p>
+        <p class="mt-1 text-2xl font-semibold" [class]="toReview() ? 'text-red-700' : 'text-black'">
+          {{ toReview() }}
+        </p>
+        <p class="text-xs text-neutral-500">Incompletos o sin cuenta abierta</p>
+      </div>
+      <div class="card !p-5">
+        <p class="text-sm text-neutral-500">Facturado</p>
+        <p class="mt-1 text-2xl font-semibold text-black">
+          {{ invoiced() | currency: 'MXN' : 'symbol-narrow' }}
+        </p>
+        <p class="text-xs text-neutral-500">{{ day.invoices.length }} factura(s), sin propina</p>
+      </div>
+    </div>
+
+    <section class="space-y-3" aria-labelledby="paymentsTitle">
+      <h2 id="paymentsTitle" class="font-inter text-lg text-black">Pagos en línea</h2>
+
+      @if (day.payments.length) {
+        <div class="table-container">
+          <table class="min-w-[820px] table-fixed text-sm">
+            <thead class="bg-neutral-50 text-neutral-600">
+              <tr>
+                <th class="w-20 px-4 py-3 text-left font-medium">Hora</th>
+                <th class="w-24 px-4 py-3 text-left font-medium">Mesa</th>
+                <th class="w-40 px-4 py-3 text-left font-medium">Estado</th>
+                <th class="px-4 py-3 text-right font-medium">Debía</th>
+                <th class="px-4 py-3 text-right font-medium">Pagó</th>
+                <th class="px-4 py-3 text-right font-medium">Propina</th>
+                <th class="px-4 py-3 text-right font-medium">Cashback</th>
+                <th class="w-36 px-4 py-3 text-left font-medium">Operación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (payment of day.payments; track payment.id) {
+                <tr class="animate-fade-in animate-duration-300 border-t border-black/10">
+                  <td class="px-4 py-3">{{ payment.paidAt | date: 'HH:mm' }}</td>
+                  <td class="truncate px-4 py-3" [title]="payment.table ?? ''">
+                    {{ payment.table ?? '—' }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="status-chip" [class]="paymentStatus[payment.status].classes">
+                      {{ paymentStatus[payment.status].label }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    @if (payment.orderCode) {
+                      {{ payment.amount | currency: 'MXN' : 'symbol-narrow' }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium text-black">
+                    {{ payment.paidAmount | currency: 'MXN' : 'symbol-narrow' }}
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    {{ payment.tip | currency: 'MXN' : 'symbol-narrow' }}
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    {{ payment.cashbackEarned | currency: 'MXN' : 'symbol-narrow' }}
+                  </td>
+                  <td
+                    class="truncate px-4 py-3 font-mono text-xs text-neutral-600"
+                    [title]="payment.providerPaymentId"
+                  >
+                    {{ payment.providerPaymentId }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p
+          class="rounded-2xl border border-dashed border-black/10 px-4 py-6 text-center text-sm text-neutral-500"
+        >
+          Sin pagos en línea este día.
+        </p>
+      }
+    </section>
+
+    <section class="space-y-3" aria-labelledby="invoicesTitle">
+      <h2 id="invoicesTitle" class="font-inter text-lg text-black">Facturas</h2>
+
+      @if (day.invoices.length) {
+        <div class="table-container">
+          <table class="min-w-[960px] table-fixed text-sm">
+            <thead class="bg-neutral-50 text-neutral-600">
+              <tr>
+                <th class="w-20 px-4 py-3 text-left font-medium">Hora</th>
+                <th class="w-40 px-4 py-3 text-left font-medium">Folio</th>
+                <th class="w-20 px-4 py-3 text-left font-medium">Mesa</th>
+                <th class="px-4 py-3 text-left font-medium">Cliente</th>
+                <th class="w-52 px-4 py-3 text-left font-medium">Uso y forma de pago</th>
+                <th class="w-28 px-4 py-3 text-right font-medium">Total</th>
+                <th class="w-32 px-4 py-3 text-left font-medium">Correo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (invoice of day.invoices; track invoice.id) {
+                <tr class="animate-fade-in animate-duration-300 border-t border-black/10">
+                  <td class="px-4 py-3">{{ invoice.issuedAt | date: 'HH:mm' }}</td>
+                  <td class="px-4 py-3">
+                    <p class="font-medium text-black">{{ invoice.folio }}</p>
+                    <p
+                      class="truncate font-mono text-[11px] text-neutral-500"
+                      [title]="'Folio fiscal: ' + invoice.uuid"
+                    >
+                      {{ invoice.uuid }}
+                    </p>
+                  </td>
+                  <td class="truncate px-4 py-3" [title]="invoice.table ?? ''">
+                    {{ invoice.table ?? '—' }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <p class="truncate text-black" [title]="invoice.legalName">
+                      {{ invoice.legalName }}
+                    </p>
+                    <p class="font-mono text-xs text-neutral-500">{{ invoice.rfc }}</p>
+                  </td>
+                  <td class="px-4 py-3">
+                    <p class="truncate" [title]="cfdiUseLabel(invoice.cfdiUse)">
+                      {{ cfdiUseLabel(invoice.cfdiUse) }}
+                    </p>
+                    <p
+                      class="truncate text-xs text-neutral-500"
+                      [title]="paymentFormLabel(invoice.paymentForm)"
+                    >
+                      {{ paymentFormLabel(invoice.paymentForm) }}
+                    </p>
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium text-black">
+                    {{ invoice.total | currency: 'MXN' : 'symbol-narrow' }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span
+                      class="status-chip"
+                      [class]="
+                        invoice.emailSent
+                          ? 'border-green-200 bg-green-100 text-green-800'
+                          : 'border-neutral-200 bg-neutral-100 text-neutral-700'
+                      "
+                    >
+                      {{ invoice.emailSent ? 'Enviado' : 'Sin confirmar' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p
+          class="rounded-2xl border border-dashed border-black/10 px-4 py-6 text-center text-sm text-neutral-500"
+        >
+          Sin facturas este día.
+        </p>
+      }
+    </section>
+  } @else {
+    <p class="text-sm text-neutral-500">Elige una sucursal para ver sus cobros.</p>
+  }
+</div>
