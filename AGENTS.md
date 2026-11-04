@@ -10,7 +10,7 @@ Cómo se trabaja en este repo, tanto para personas como para agentes de código.
 | `botbite-web-app` | Panel para restaurantes y su personal (app.botbite.com.mx) | Netlify |
 | `botbite-lander` | Landing (botbite.com.mx) | Netlify; el dominio está en GoDaddy con DNS en Netlify |
 
-El mesero de WhatsApp corre en n8n (VPS de Hostinger, lo mantiene Carlos). Habla con la API por HTTP y no se conecta a la base.
+El mesero de WhatsApp es un servicio en Node.js que mantiene Carlos (`github.com/cosunab/botbite-mesero`), con n8n para tareas secundarias. Habla con la API por HTTP y no se conecta a la base.
 
 ## Forma de trabajo
 
@@ -46,11 +46,11 @@ El mesero de WhatsApp corre en n8n (VPS de Hostinger, lo mantiene Carlos). Habla
 
 ### Seguridad
 
-- Los secretos no van en el código, en commits, en PRs ni en chats (WhatsApp incluido). Viven en las variables de entorno de Render y Netlify o en las credenciales de n8n.
+- Los secretos no van en el código, en commits, en PRs ni en chats (WhatsApp incluido). Viven en las variables de entorno de Render y Netlify o en el `.env` del servicio del mesero.
 - Todo acceso a datos respeta la separación por restaurante y por sucursal.
 - De los datos personales (teléfonos, datos fiscales) se guarda lo mínimo, y nunca se escriben en logs.
 
-### Coordinación con n8n
+### Coordinación con el servicio del mesero
 
 - Las rutas que usa el bot (`/v1/bot/*`) se documentan en Swagger (`/docs`). Un cambio incompatible se le avisa a Carlos antes de desplegarlo y la fecha se acuerda con él.
 - Las páginas que revisó Meta (`/agentes`, el aviso de privacidad y protección de datos) y el `<head>` de la home no se cambian sin su visto bueno.

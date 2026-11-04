@@ -125,7 +125,7 @@ export class BotConfigModalComponent {
   /** Llave recién creada: es la única vez que se puede ver completa. */
   protected readonly createdSecret = signal<string | null>(null);
 
-  /** La conexión con n8n, las funciones y las llaves las administra BotBite. */
+  /** La conexión con el servicio del mesero, las funciones y las llaves las administra BotBite. */
   protected readonly isAdmin = computed(() => {
     const roles = this.authService.user()?.roles || [];
     return roles.includes('super') || roles.includes('admin');

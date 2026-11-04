@@ -90,7 +90,7 @@ src/app/
 ### Mesero digital
 En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp: ubicación y radio, hora de cierre, mesas válidas y encuesta.
 
-Un admin además administra lo que conecta con n8n: el slug, el `phone_number_id` de Meta, la URL de los webhooks, las funciones contratadas y las llaves del bot. Cada llave se muestra una sola vez, al generarla.
+Un admin además administra lo que conecta con el servicio del mesero: el slug, el `phone_number_id` de Meta, la URL de los webhooks, las funciones contratadas y las llaves del bot. Cada llave se muestra una sola vez, al generarla.
 
 ### Personal de la sucursal
 En **Sucursales → Personal**, el dueño (o un admin) asigna cajeros y meseros por correo. La cuenta debe existir con rol `user` (la crea un admin en **Usuarios**). El personal solo ve las sucursales asignadas y no puede modificar nada.
