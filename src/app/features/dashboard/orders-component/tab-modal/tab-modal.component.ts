@@ -1,4 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -46,6 +47,8 @@ export class TabModalComponent {
   protected readonly saving = signal(false);
   protected readonly search = signal('');
   protected readonly table = signal('');
+  /** Mesas que acepta la sucursal. Vacío: cualquiera. */
+  protected readonly validTables = signal<string[]>([]);
   protected readonly customerName = signal('');
   protected readonly lines = signal<Record<string, Line>>({});
 
@@ -62,7 +65,7 @@ export class TabModalComponent {
         item.isActive &&
         (!term ||
           item.name.toLowerCase().includes(term) ||
-          item.category.toLowerCase().includes(term))
+          item.category.toLowerCase().includes(term)),
     );
   });
 
@@ -72,15 +75,12 @@ export class TabModalComponent {
   });
 
   protected readonly total = computed(() =>
-    this.selected().reduce(
-      (sum, item) => sum + item.price * this.lines()[item.id].quantity,
-      0
-    )
+    this.selected().reduce((sum, item) => sum + item.price * this.lines()[item.id].quantity, 0),
   );
 
   protected readonly canSave = computed(
     () =>
-      this.selected().length > 0 && !this.saving() && (!!this.account() || !!this.table().trim())
+      this.selected().length > 0 && !this.saving() && (!!this.account() || !!this.table().trim()),
   );
 
   constructor() {
@@ -107,9 +107,22 @@ export class TabModalComponent {
           this.toastrService.error('No se pudo cargar el menú de la sucursal.');
           return EMPTY;
         }),
-        finalize(() => this.loading.set(false))
+        finalize(() => this.loading.set(false)),
       )
-      .subscribe((catalog) => this.catalog.set(catalog));
+      .subscribe(({ catalog, validTables }) => {
+        this.catalog.set(catalog);
+        this.validTables.set(validTables);
+      });
+  }
+
+  /** La API también lo valida; aquí solo se avisa antes de enviar. */
+  private tableAccepted(): boolean {
+    const tables = this.validTables();
+    if (tables.length === 0) return true;
+
+    const normalize = (table: string) => table.trim().replace(/\s+/g, ' ').toUpperCase();
+    const wanted = normalize(this.table());
+    return tables.some((table) => normalize(table) === wanted);
   }
 
   protected value(ev: Event): string {
@@ -156,6 +169,11 @@ export class TabModalComponent {
       ...(line.note.trim() && { note: line.note.trim() }),
     }));
 
+    if (!account && !this.tableAccepted()) {
+      this.toastrService.error('Esa mesa no está en la lista de la sucursal.');
+      return;
+    }
+
     const request: Observable<void> = account
       ? this.ordersService.addRound(account.id, items)
       : this.ordersService.openTab({
@@ -169,11 +187,15 @@ export class TabModalComponent {
 
     request
       .pipe(
-        catchError(() => {
-          this.toastrService.error('No se pudo guardar la comanda.');
+        catchError((error: HttpErrorResponse) => {
+          this.toastrService.error(
+            error.status === 400 && /not accepted/.test(String(error.error?.message))
+              ? 'Esa mesa no está en la lista de la sucursal.'
+              : 'No se pudo guardar la comanda.',
+          );
           return EMPTY;
         }),
-        finalize(() => this.saving.set(false))
+        finalize(() => this.saving.set(false)),
       )
       .subscribe(() => {
         this.toastrService.success(account ? 'Ronda agregada' : 'Cuenta abierta');

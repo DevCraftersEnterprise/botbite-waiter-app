@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
-import { Observable, Subscription } from 'rxjs';
+import { debounceTime, Observable, Subscription } from 'rxjs';
 import { IconsService } from '../../../core/services/icons.service';
 import { OrdersService } from '../../../core/services/orders.service';
 import { OrgService } from '../../../core/services/org.service';
@@ -27,6 +27,8 @@ import { ORDER_STATUS, ROUND_STATUS } from './order-labels';
 import { TabModalComponent } from './tab-modal/tab-modal.component';
 
 type AccountAction = 'settle' | 'cancel';
+
+const RELOAD_DEBOUNCE_MS = 300;
 
 @Component({
   selector: 'app-orders.component',
@@ -59,14 +61,18 @@ export class OrdersComponent implements OnDestroy {
   protected readonly applyingAction = signal(false);
 
   protected readonly confirmTitle = computed(() =>
-    this.pendingAction()?.action === 'settle' ? 'Cobrar cuenta' : 'Cancelar cuenta'
+    this.pendingAction()?.action === 'settle' ? 'Cobrar cuenta' : 'Cancelar cuenta',
   );
 
   private branchId: string | null = null;
   private readonly socketSubscription: Subscription;
 
   constructor() {
-    this.socketSubscription = this.socketService.getOrderUpdates().subscribe(() => this.load());
+    // Una ronda o un pago generan varios avisos seguidos: se recarga una vez por ráfaga.
+    this.socketSubscription = this.socketService
+      .getOrderUpdates()
+      .pipe(debounceTime(RELOAD_DEBOUNCE_MS))
+      .subscribe(() => this.load());
 
     // La sucursal puede resolverse después de abrir la pantalla (al recargar) o
     // cambiar mientras está abierta.
@@ -177,9 +183,7 @@ export class OrdersComponent implements OnDestroy {
       next: () => {
         this.applyingAction.set(false);
         this.closeAction();
-        this.toastrService.success(
-          action === 'settle' ? 'Cuenta cobrada' : 'Cuenta cancelada'
-        );
+        this.toastrService.success(action === 'settle' ? 'Cuenta cobrada' : 'Cuenta cancelada');
         this.load();
       },
       error: () => {

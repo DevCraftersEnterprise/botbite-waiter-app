@@ -19,10 +19,18 @@
             id="tabTable"
             class="input"
             maxlength="30"
-            placeholder="Ej: A5 o BARRA"
+            list="tabTables"
+            [placeholder]="validTables().length ? 'Elige una mesa de la lista' : 'Ej: A5 o BARRA'"
             [value]="table()"
             (input)="table.set(value($event))"
           />
+          @if (validTables().length) {
+            <datalist id="tabTables">
+              @for (option of validTables(); track option) {
+                <option [value]="option"></option>
+              }
+            </datalist>
+          }
         </div>
         <div class="space-y-1">
           <label for="tabCustomer">Nombre (opcional)</label>
@@ -52,7 +60,9 @@
     @if (loading()) {
       <p>Cargando menú...</p>
     } @else {
-      <ul class="max-h-64 divide-y divide-black/5 overflow-y-auto rounded-xl border border-black/10">
+      <ul
+        class="max-h-64 divide-y divide-black/5 overflow-y-auto rounded-xl border border-black/10"
+      >
         @for (item of visibleItems(); track item.id) {
           <li class="px-3 py-2">
             <div class="flex items-center justify-between gap-3">
@@ -96,7 +106,9 @@
             }
           </li>
         } @empty {
-          <li class="px-3 py-4 text-center text-sm text-neutral-500">No hay platillos para mostrar.</li>
+          <li class="px-3 py-4 text-center text-sm text-neutral-500">
+            No hay platillos para mostrar.
+          </li>
         }
       </ul>
     }

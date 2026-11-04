@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { OrgService } from './org.service';
 import { CashierNotification } from './socket.service';
 import {
+  BranchCatalog,
   CatalogItem,
   OrderAccount,
   OrdersSummary,
@@ -34,14 +35,21 @@ export class OrdersService {
     return this.http.get<OrdersSummary>(`${this.apiUrl}/orders/summary`, { params });
   }
 
-  catalog(branchId: string): Observable<CatalogItem[]> {
+  /** Platillos y mesas aceptadas de la sucursal. Sin lista, se acepta cualquier mesa. */
+  catalog(branchId: string): Observable<BranchCatalog> {
     const restaurantId = this.orgService.selectedRestaurantId();
 
     return this.http
-      .get<{ catalog: CatalogItem[] }>(
-        `${this.apiUrl}/branches/${restaurantId}/${branchId}/catalog`
-      )
-      .pipe(map((response) => response.catalog));
+      .get<{
+        catalog: CatalogItem[];
+        validTables?: string[];
+      }>(`${this.apiUrl}/branches/${restaurantId}/${branchId}/catalog`)
+      .pipe(
+        map((response) => ({
+          catalog: response.catalog,
+          validTables: response.validTables ?? [],
+        })),
+      );
   }
 
   openTab(tab: {
