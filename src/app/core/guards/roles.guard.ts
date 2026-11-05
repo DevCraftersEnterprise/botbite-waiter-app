@@ -30,10 +30,15 @@ export function createRolesGuard(requiredRole: UserRole): CanActivateFn {
     const auth = inject(AuthService);
     const router = inject(Router);
 
+    // Con sesión pero sin el rol, regresa al inicio del panel, no al login.
     const user = auth.user();
-    if (user && hasRequiredRole(user.roles, requiredRole)) return true;
+    if (user) {
+      return hasRequiredRole(user.roles, requiredRole)
+        ? true
+        : router.navigateByUrl('/dashboard/home');
+    }
 
-    if (!user && auth.isAuthenticated()) {
+    if (auth.isAuthenticated()) {
       return new Promise<boolean | UrlTree>((resolve) => {
         auth.loadProfile().subscribe({
           next: (profile) =>

@@ -13,7 +13,13 @@ interface RefreshTokenResponse {
   refresh_token?: string;
 }
 
+// El token solo viaja a la API: nunca a otro dominio (imágenes, CDNs, etc.).
+const isApiRequest = (url: string) =>
+  url === environment.apiBaseUrl || url.startsWith(`${environment.apiBaseUrl}/`);
+
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
+  if (!isApiRequest(req.url)) return next(req);
+
   const auth = inject(AuthService);
   const http = inject(HttpClient);
 
