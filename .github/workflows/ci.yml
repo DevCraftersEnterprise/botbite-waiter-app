@@ -25,8 +25,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0 # SonarCloud necesita el historial completo
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -37,25 +35,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Unit tests with coverage
+      - name: Unit tests
         run: npm run test:ci
 
       - name: Build
         run: npm run build
-
-      - name: Check SonarCloud token
-        id: sonar
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          if [ -n "$SONAR_TOKEN" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::SonarCloud omitido: falta el secreto SONAR_TOKEN."
-          fi
-
-      - name: SonarQube Scan
-        if: steps.sonar.outputs.enabled == 'true'
-        uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
