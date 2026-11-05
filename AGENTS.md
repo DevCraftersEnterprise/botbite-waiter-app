@@ -76,9 +76,10 @@ Angular 20 (componentes standalone y signals), Tailwind 4, socket.io-client y ng
 npm ci
 npm start          # http://localhost:4200, contra la API local
 npm run build
+npm run test:ci    # pruebas unitarias en Chrome sin ventana, como en la CI
 ```
 
-Todavía no hay pruebas unitarias. Cada cambio se revisa en el navegador con la API local, entrando con un usuario de cada rol afectado.
+Las pruebas unitarias (Karma y Jasmine) cubren la sesión, los roles, el token y las utilidades. La lógica nueva lleva su prueba en un `*.spec.ts` junto al archivo, con `provideZonelessChangeDetection()` porque la app no usa zone.js. Además, cada cambio se revisa en el navegador con la API local, entrando con un usuario de cada rol afectado.
 
 ### Convenciones
 
@@ -90,3 +91,9 @@ Todavía no hay pruebas unitarias. Cada cambio se revisa en el navegador con la 
 ### Despliegue
 
 Netlify publica `main` automáticamente. `public/_redirects` manda todas las rutas a `index.html` porque el panel es una SPA. Después de desplegar, entra a https://app.botbite.com.mx y revisa la pantalla que cambiaste.
+
+### CI y rama protegida
+
+- `main` solo acepta PRs con el check `test` en verde (pruebas unitarias y build). No hay excepción para administradores, así que no hay atajo para un hotfix: también va por PR.
+- Antes de abrir el PR corre `npm run test:ci` y `npm run build`.
+- Si la CI falla, se corrige en la rama; no se fuerza el merge.
