@@ -31,6 +31,11 @@ export interface OrderRound {
   items: RoundItem[];
 }
 
+export interface BranchCatalog {
+  catalog: CatalogItem[];
+  validTables: string[];
+}
+
 /** La cuenta de una mesa: cada ronda es una comanda. */
 export interface OrderAccount {
   id: string;
