@@ -64,7 +64,7 @@ src/app/
 │   ├── login-component/
 │   ├── layout/         # shell: menú lateral, selector de restaurante y sucursal
 │   ├── dashboard/      # home, users, categories, restaurants, branches, products,
-│   │                   # menus, menu-items, orders, notifications
+│   │                   # menus, menu-items, orders, billing, notifications
 │   └── public/         # menu-viewer: PDF del menú que el bot comparte con el comensal
 └── shared/             # modal, paginación, títulos, estados vacíos, utilidades
 ```
@@ -92,6 +92,7 @@ src/app/
 | Productos | client | Catálogo, carga masiva por CSV y fotos |
 | Menús | client | Menús por sucursal, items, precios, recomendados y PDF |
 | Órdenes | user | Mesas con cuenta abierta y sus rondas, en vivo. El personal mueve las comandas, cobra las cuentas y abre sus propias cuentas |
+| Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy |
 | Notificaciones | user | Avisos de caja en tiempo real, por tipo; se marcan como atendidos |
 
 ### Mesero digital
