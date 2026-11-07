@@ -16,9 +16,14 @@ El mesero de WhatsApp es un servicio en Node.js que mantiene Carlos (`github.com
 
 ### Ramas, commits y PRs
 
-- No se hace commit directo a `main`. Cada cambio sale de `main` actualizado (`git pull`) en su propia rama: `feat/`, `fix/`, `refactor/`, `chore/` o `docs/`.
+- Hay dos ramas fijas:
+  - `dev`: donde se integra el trabajo. Es la rama por defecto.
+  - `main`: producción. Lo que entra a `main` se despliega solo.
+- No se hace commit directo a `dev` ni a `main`. Cada cambio sale de `dev` actualizado (`git pull`) en su propia rama: `feat/`, `fix/`, `refactor/`, `chore/` o `docs/`.
 - Los commits van en inglés con Conventional Commits: `feat: …`, `fix(netlify): …`, `chore(node): …`.
-- Un PR por rama hacia `main`. Lo revisa e integra Sergio. Si el cambio toca varios repos, cada PR dice en qué orden se integran y despliegan.
+- Un PR por rama hacia `dev`. Lo revisa e integra Sergio. Si el cambio toca varios repos, cada PR dice en qué orden se integran y despliegan.
+- Para pasar a producción se abre un PR de `dev` a `main`, y se integra con merge commit (no squash) para que las dos ramas no se separen. Si algo sale mal en `dev`, se corrige ahí con otro PR y no llega a producción.
+- Un arreglo urgente sigue el mismo camino: PR a `dev` y luego el PR de `dev` a `main`.
 - Haz push seguido: lo que solo está en tu disco se puede perder.
 
 ### Idioma
@@ -57,7 +62,8 @@ El mesero de WhatsApp es un servicio en Node.js que mantiene Carlos (`github.com
 
 ### Después de integrar
 
-- `main` se despliega solo. Revisa el despliegue y verifica en producción lo que cambiaste: la salud de la API, la pantalla afectada o un `curl`.
+- Integrar a `dev` no despliega a producción.
+- Al integrar el PR de `dev` a `main`, producción se despliega sola. Revisa el despliegue y verifica en producción lo que cambiaste: la salud de la API, la pantalla afectada o un `curl`.
 
 ## Este repo: panel
 
@@ -92,8 +98,8 @@ Las pruebas unitarias (Karma y Jasmine) cubren la sesión, los roles, el token y
 
 Netlify publica `main` automáticamente. `public/_redirects` manda todas las rutas a `index.html` porque el panel es una SPA. Después de desplegar, entra a https://app.botbite.com.mx y revisa la pantalla que cambiaste.
 
-### CI y rama protegida
+### CI y ramas protegidas
 
-- `main` solo acepta PRs con el check `test` en verde (pruebas unitarias y build). No hay excepción para administradores, así que no hay atajo para un hotfix: también va por PR.
+- `dev` y `main` solo aceptan PRs con el check `test` en verde (pruebas unitarias y build). No hay excepción para administradores, así que no hay atajo para un hotfix: también va por PR a `dev`.
 - Antes de abrir el PR corre `npm run test:ci` y `npm run build`.
 - Si la CI falla, se corrige en la rama; no se fuerza el merge.
