@@ -38,10 +38,11 @@ El origen del panel (por ejemplo `http://localhost:4200` o `https://app.botbite.
 | `npm test` | Pruebas unitarias (Karma) |
 | `npm run test:ci` | Pruebas una sola vez en Chrome sin ventana (como en la CI) |
 
-## CI y rama protegida
+## CI y ramas protegidas
 
-- **CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)): en cada PR hacia `main` y en cada push a `main` corre las pruebas unitarias y el build. No usa secretos.
-- **`main` protegida:** solo entra por PR y con el check `test` en verde. No se borra ni acepta force-push, y la regla aplica también a los administradores.
+- **Ramas:** el trabajo se integra en `dev` (rama por defecto) y pasa a producción con un PR de `dev` a `main`.
+- **CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)): en cada PR hacia `dev` o `main`, y en cada push a esas ramas, corre las pruebas unitarias y el build. No usa secretos.
+- **`dev` y `main` protegidas:** solo entra por PR y con el check `test` en verde. No se borran ni aceptan force-push, y la regla aplica también a los administradores.
 - **Despliegue:** Netlify publica `main` como siempre; no hay despliegue a Hostinger. Como solo entra lo que pasó la CI, lo que publica Netlify ya está probado.
 
 ## Despliegue
