@@ -5,6 +5,7 @@ import {
   Bot,
   Banknote,
   CirclePlus,
+  Contact,
   CreditCard,
   FileText,
   ReceiptText,
@@ -53,6 +54,7 @@ export class IconsService {
   readonly menu = Menu;
   readonly house = House;
   readonly users = Users;
+  readonly customers = Contact;
   readonly categories = StarIcon;
   readonly restaurants = Utensils;
   readonly branches = MapPin;
