@@ -102,6 +102,7 @@ const FEATURES: { key: keyof BotFeatures; label: string }[] = [
   { key: 'invoicing', label: 'Facturación' },
   { key: 'promotions', label: 'Promociones' },
   { key: 'survey', label: 'Encuesta' },
+  { key: 'languages', label: 'Idiomas (apagado: solo en español)' },
 ];
 
 /** El prefijo del restaurante es fijo: solo se edita lo que sigue. */
