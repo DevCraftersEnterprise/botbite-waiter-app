@@ -20,7 +20,6 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { TitleComponent } from '../../../shared/components/title/title';
-import { downloadTemplate } from '../../../shared/utils/download-template.util';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
 
@@ -273,33 +272,6 @@ export class ProductsComponent {
       this.toastrService.success(`Sucursal ${enable ? 'activada' : 'desactivada'} correctamente`);
       this.reload();
     });
-  }
-
-  onDownloadTemplate(): void {
-    downloadTemplate('products-template.csv');
-  }
-
-  onCsvSelected(ev: Event): void {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
-
-    if (!file) return;
-
-    this.productsService
-      .bulkCreateProducts(this.restaurantId()!, file)
-      .pipe(
-        catchError((e) => {
-          console.error('Error uploading CSV:', e);
-          this.toastrService.error('Error al subir el archivo CSV');
-          return EMPTY;
-        })
-      )
-      .subscribe(() => {
-        input.value = '';
-        this.toastrService.success('Productos cargados correctamente');
-        this.paginationState.resetToFirstPage();
-        this.reload();
-      });
   }
 
   updateForm<K extends keyof ProductForm>(key: K, ev: Event): void {

@@ -7,46 +7,7 @@
 
     <div class="actions-bar">
       <button
-        class="flex-1 cursor-pointer whitespace-nowrap rounded-xl border border-green-200 bg-green-100 px-3 py-2 text-green-800 transition-all hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:flex-none"
-        (click)="onDownloadTemplate()"
-        aria-label="Plantilla de carga masiva por CSV"
-      >
-        <div class="flex items-center justify-center gap-2">
-          <lucide-icon
-            [img]="iconsService.download"
-            size="15"
-            color="green"
-            aria-hidden="true"
-          ></lucide-icon>
-          <span class="text-sm sm:text-base">Plantilla CSV</span>
-        </div>
-      </button>
-      <input
-        #csvInput
-        type="file"
-        accept=".csv,text/csv"
-        class="hidden"
-        (change)="onCsvSelected($event)"
-        aria-label="Seleccionar archivo CSV para carga masiva"
-      />
-      <button
-        class="flex-1 cursor-pointer whitespace-nowrap rounded-xl border border-black/10 px-3 py-2 transition-all hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:flex-none"
-        (click)="csvInput.click()"
-        [disabled]="!restaurantId()"
-        aria-label="Carga masiva por CSV"
-      >
-        <div class="flex items-center justify-center gap-2">
-          <lucide-icon
-            [img]="iconsService.upload"
-            size="15"
-            color="black"
-            aria-hidden="true"
-          ></lucide-icon>
-          <span class="text-sm sm:text-base">Cargar masiva (CSV)</span>
-        </div>
-      </button>
-      <button
-        class="flex-1 cursor-pointer whitespace-nowrap rounded-xl bg-black px-3 py-2 text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:flex-none"
+        class="flex-1 cursor-pointer rounded-xl bg-black px-3 py-2 whitespace-nowrap text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 md:flex-none"
         (click)="openCreate()"
         [disabled]="!restaurantId()"
         aria-label="Nuevo producto"

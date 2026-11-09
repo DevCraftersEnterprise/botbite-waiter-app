@@ -23,8 +23,22 @@ import { ModalComponent } from '../../../shared/components/modal/modal';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
 import { TitleComponent } from '../../../shared/components/title/title';
 import { downloadTemplate } from '../../../shared/utils/download-template.util';
+import {
+  FieldErrors,
+  formErrorSummary,
+  toFormErrors,
+} from '../../../shared/utils/api-errors.util';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
+
+/** Campos del formulario de sucursal que la API puede rechazar. */
+const BRANCH_FIELDS = [
+  'name',
+  'address',
+  'phoneNumberAssistant',
+  'phoneNumberReception',
+  'surveyUrl',
+] as const;
 
 @Component({
   selector: 'app-branches',
@@ -67,6 +81,9 @@ export class BranchesComponent {
     surveyUrl: '',
     isActive: true,
   });
+
+  /** Lo que rechazó la API, junto a su campo. */
+  readonly fieldErrors = signal<FieldErrors>({});
 
   readonly branches = computed(() => this.filteredBranches());
   readonly total = computed(() => this.filteredTotal());
@@ -208,6 +225,7 @@ export class BranchesComponent {
   }
 
   openCreate(): void {
+    this.fieldErrors.set({});
     this.mode.set('create');
     this.form.set({
       name: '',
@@ -220,6 +238,7 @@ export class BranchesComponent {
   }
 
   openEdit(branch: Branch): void {
+    this.fieldErrors.set({});
     this.mode.set('edit');
     this.form.set({
       id: branch.id,
@@ -234,6 +253,7 @@ export class BranchesComponent {
 
   closeModal(): void {
     this.mode.set(null);
+    this.fieldErrors.set({});
     this.form.set({
       name: '',
       address: '',
@@ -252,6 +272,7 @@ export class BranchesComponent {
     }
 
     this.saving.set(true);
+    this.fieldErrors.set({});
 
     const { id, ...data } = f;
 
@@ -271,7 +292,9 @@ export class BranchesComponent {
     op.pipe(
       catchError((e) => {
         console.error('Error saving branch:', e);
-        this.toastrService.error('Error al guardar la sucursal');
+        const errors = toFormErrors(e, BRANCH_FIELDS);
+        this.fieldErrors.set(errors.fields);
+        this.toastrService.error(formErrorSummary(errors));
         return EMPTY;
       }),
       finalize(() => this.saving.set(false))
@@ -372,6 +395,17 @@ export class BranchesComponent {
   updateForm<K extends keyof BranchForm>(key: K, ev: Event): void {
     const el = ev.target as HTMLInputElement;
     this.form.update((f) => ({ ...f, [key]: el.value }));
+    if (this.fieldErrors()[key]) {
+      this.fieldErrors.update((errors) => {
+        const next = { ...errors };
+        delete next[key];
+        return next;
+      });
+    }
+  }
+
+  fieldClass(field: string): string {
+    return this.fieldErrors()[field] ? 'border-red-500 bg-red-50/40' : 'border-black/10';
   }
 
   updateFormChecked<K extends keyof BranchForm>(key: K, ev: Event): void {

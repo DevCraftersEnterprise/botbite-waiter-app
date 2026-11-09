@@ -7,6 +7,8 @@ export interface BotFeatures {
   invoicing: boolean;
   promotions: boolean;
   survey: boolean;
+  /** Pregunta el idioma; apagado, el bot atiende solo en español. */
+  languages: boolean;
 }
 
 /** Configuración del mesero de una sucursal. */

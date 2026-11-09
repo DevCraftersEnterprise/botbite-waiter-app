@@ -10,6 +10,10 @@ export interface Branch {
   qrUrl?: string | null;
   surveyUrl?: string | null;
   restaurantId: string;
+  /** Si el bot revisa que el comensal esté en el restaurante. */
+  verifyLocation?: boolean;
+  /** La lista de sucursales trae el slug del restaurante, prefijo del de la sucursal. */
+  restaurant?: { name?: string; slug?: string };
   isActive: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;

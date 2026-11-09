@@ -98,6 +98,12 @@ export class ShellComponent implements OnInit {
       icon: this.iconsService.bill,
     },
     {
+      label: 'Clientes',
+      to: '/dashboard/customers',
+      requiredRole: 'client',
+      icon: this.iconsService.customers,
+    },
+    {
       label: 'Notificaciones',
       to: '/dashboard/notifications',
       requiredRole: 'user',

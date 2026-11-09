@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { combineLatest } from 'rxjs';
+import { combineLatest, finalize } from 'rxjs';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { IconsService } from '../../../core/services/icons.service';
 import { MenusService } from '../../../core/services/menus.service';
@@ -24,6 +24,10 @@ import { createSearchState } from '../../../shared/utils/search.util';
 import { extractMenuIdFromSlug } from '../../../shared/utils/slug-genarator.util';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { MenuItemForm } from '../../../core/services/forms/forms.interfaces';
+import { ToastrService } from 'ngx-toastr';
+import { downloadTemplate } from '../../../shared/utils/download-template.util';
+import { MenuCsvImportComponent } from './menu-csv-import/menu-csv-import.component';
+import { downloadBlob, menuCsvFileName } from './menu-csv-import/menu-csv.util';
 
 @Component({
   selector: 'app-menu-items',
@@ -34,6 +38,7 @@ import { MenuItemForm } from '../../../core/services/forms/forms.interfaces';
     PaginationComponent,
     ModalComponent,
     LucideAngularModule,
+    MenuCsvImportComponent,
   ],
   templateUrl: './menu-items.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +51,7 @@ export class MenuItemsComponent {
   protected readonly iconsService = inject(IconsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   protected readonly menuId = signal<string | null>(null);
   protected readonly menu = signal<Menu | null>(null);
@@ -59,6 +65,8 @@ export class MenuItemsComponent {
   protected readonly target = signal<MenuItem | null>(null);
   protected readonly filters = signal<{ isActive?: boolean }>({});
   protected readonly mode = signal<'create' | 'edit' | null>(null);
+  protected readonly showCsvImport = signal(false);
+  protected readonly exporting = signal(false);
 
   protected readonly form = signal<MenuItemForm>({
     product: [],
@@ -131,6 +139,39 @@ export class MenuItemsComponent {
       this.productPrice() > 0
     );
   });
+
+  /** Se empezó a llenar el diálogo: desde ahí se marca en rojo lo que falta. */
+  protected readonly touched = signal(false);
+
+  protected readonly missingFields = computed(() => {
+    const missing: ('category' | 'price' | 'products')[] = [];
+    if (this.selectedCategoryId() === '') missing.push('category');
+    if (!(this.productPrice() > 0)) missing.push('price');
+    if (this.mode() === 'create' && this.selectedProductIds().length === 0) {
+      missing.push('products');
+    }
+    return missing;
+  });
+
+  /** Dice qué falta junto al botón Guardar, que está deshabilitado. */
+  protected readonly missingText = computed(() => {
+    const labels = { category: 'la categoría', price: 'el precio', products: 'elegir productos' };
+    const missing = this.missingFields().map((field) => labels[field]);
+    if (!missing.length) return '';
+    const list =
+      missing.length === 1
+        ? missing[0]
+        : `${missing.slice(0, -1).join(', ')} y ${missing[missing.length - 1]}`;
+    return `Para guardar falta ${list}.`;
+  });
+
+  protected isMissing(field: 'category' | 'price' | 'products'): boolean {
+    return this.touched() && this.missingFields().includes(field);
+  }
+
+  protected fieldClass(missing: boolean): string {
+    return missing ? 'border-red-500 bg-red-50/40' : 'border-black/10';
+  }
 
   protected readonly isFormValid = computed(() => {
     return this.selectedCategoryId() !== '' && this.productPrice() > 0;
@@ -286,7 +327,31 @@ export class MenuItemsComponent {
     this.fetch();
   }
 
+  protected downloadCsvTemplate(): void {
+    downloadTemplate('menu-template.csv');
+  }
+
+  protected exportCsv(): void {
+    const mid = this.menuId();
+    if (!mid) return;
+
+    this.exporting.set(true);
+    this.menusService
+      .exportMenuCsv(mid)
+      .pipe(finalize(() => this.exporting.set(false)))
+      .subscribe({
+        next: (blob) => downloadBlob(blob, menuCsvFileName(this.menuName())),
+        error: () => this.toastr.error('No se pudo exportar el menú'),
+      });
+  }
+
+  protected onCsvImported(): void {
+    this.paginationState.resetToFirstPage();
+    this.fetch();
+  }
+
   protected openAddProductsModal(): void {
+    this.touched.set(false);
     this.mode.set('create');
     this.selectedProductIds.set([]);
     this.selectedCategoryId.set('');
@@ -299,6 +364,7 @@ export class MenuItemsComponent {
   }
 
   protected openEdit(menuItem: MenuItem): void {
+    this.touched.set(false);
     this.mode.set('edit');
     this.editingItemId.set(menuItem.id);
     this.selectedCategoryId.set(menuItem.category.id.toString());
@@ -329,6 +395,7 @@ export class MenuItemsComponent {
   }
 
   protected toggleProductSelection(productId: string): void {
+    this.touched.set(true);
     this.selectedProductIds.update((ids) => {
       if (ids.includes(productId)) {
         return ids.filter((id) => id !== productId);
@@ -343,17 +410,20 @@ export class MenuItemsComponent {
   }
 
   protected updateCategory(event: Event): void {
+    this.touched.set(true);
     const target = event.target as HTMLSelectElement;
     this.selectedCategoryId.set(target.value);
   }
 
   protected updatePrice(event: Event): void {
+    this.touched.set(true);
     const target = event.target as HTMLInputElement;
     const value = parseFloat(target.value);
     this.productPrice.set(isNaN(value) ? 0 : value);
   }
 
   protected updateVariantGroup(event: Event): void {
+    this.touched.set(true);
     const target = event.target as HTMLInputElement;
     this.productVariantGroup.set(target.value);
   }

@@ -1,0 +1,252 @@
+<div class="section-spacing">
+  <div class="page-header">
+    <shared-title
+      title="Clientes"
+      [description]="
+        'Visitas, consumo, monedero y promociones de los clientes' +
+        (restaurantName() ? ' de ' + restaurantName() : '') +
+        '.'
+      "
+    />
+
+    <div class="actions-bar">
+      <button
+        class="btn-secondary btn-full"
+        (click)="exportCsv()"
+        [disabled]="!exportEnabled() || exporting() || !total()"
+        [title]="
+          exportEnabled()
+            ? 'Descarga la lista con los filtros actuales'
+            : 'La exportación se activa cuando el aviso de privacidad la cubra'
+        "
+        aria-label="Exportar clientes a CSV"
+      >
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon
+            [img]="iconsService.downloadFile"
+            size="15"
+            color="black"
+            aria-hidden="true"
+          ></lucide-icon>
+          <span>{{ exporting() ? 'Exportando...' : 'Exportar CSV' }}</span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  @if (totals(); as t) {
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div class="rounded-2xl border border-black/10 p-4">
+        <p class="text-xs text-neutral-500">Clientes</p>
+        <p class="text-2xl font-semibold">{{ t.customers }}</p>
+      </div>
+      <div class="rounded-2xl border border-black/10 p-4">
+        <p class="text-xs text-neutral-500">Nuevos del mes</p>
+        <p class="text-2xl font-semibold">{{ t.newThisMonth }}</p>
+      </div>
+      <div class="rounded-2xl border border-black/10 p-4">
+        <p class="text-xs text-neutral-500">Recurrentes</p>
+        <p class="text-2xl font-semibold">{{ t.recurring }}</p>
+      </div>
+      <div class="rounded-2xl border border-black/10 p-4">
+        <p class="text-xs text-neutral-500">Aceptaron promociones</p>
+        <p class="text-2xl font-semibold">{{ t.promosAccepted }}</p>
+      </div>
+    </div>
+  }
+
+  @if (!exportEnabled() && totals()) {
+    <p class="text-xs text-neutral-500">
+      La exportación a CSV todavía está apagada: se activa cuando el aviso de privacidad de BotBite
+      la cubra.
+    </p>
+  }
+
+  <div class="search-bar">
+    <div class="flex items-center gap-2">
+      <label for="customersSearch" class="sr-only">Buscar por nombre o teléfono</label>
+      <lucide-icon
+        [img]="iconsService.search"
+        size="15"
+        color="black"
+        aria-hidden="true"
+      ></lucide-icon>
+      <input
+        id="customersSearch"
+        type="search"
+        placeholder="Nombre o teléfono..."
+        class="input-search"
+        [value]="searchTerm()"
+        (input)="updateSearch($event)"
+      />
+    </div>
+    <select
+      class="select-full"
+      [value]="status()"
+      (change)="updateStatus($event)"
+      aria-label="Filtrar por estado"
+    >
+      <option value="">Todos los estados</option>
+      @for (option of statusOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+    <select
+      class="select-full"
+      [value]="promos()"
+      (change)="updatePromos($event)"
+      aria-label="Filtrar por promociones"
+    >
+      <option value="">Promociones: todas</option>
+      @for (option of promosOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="table-container">
+    <table class="min-w-[1100px] table-fixed">
+      <thead class="bg-neutral-50 text-neutral-600">
+        <tr>
+          <th class="w-56 px-4 py-3 text-left font-medium" [attr.aria-sort]="ariaSort('name')">
+            <button type="button" class="cursor-pointer" (click)="sortBy('name')">
+              Cliente {{ sortMark('name') }}
+            </button>
+          </th>
+          <th class="w-20 px-4 py-3 text-right font-medium" [attr.aria-sort]="ariaSort('visits')">
+            <button type="button" class="cursor-pointer" (click)="sortBy('visits')">
+              Visitas {{ sortMark('visits') }}
+            </button>
+          </th>
+          <th
+            class="w-28 px-4 py-3 text-left font-medium"
+            [attr.aria-sort]="ariaSort('firstVisitAt')"
+          >
+            <button type="button" class="cursor-pointer" (click)="sortBy('firstVisitAt')">
+              Alta {{ sortMark('firstVisitAt') }}
+            </button>
+          </th>
+          <th
+            class="w-28 px-4 py-3 text-left font-medium"
+            [attr.aria-sort]="ariaSort('lastVisitAt')"
+          >
+            <button type="button" class="cursor-pointer" (click)="sortBy('lastVisitAt')">
+              Última visita {{ sortMark('lastVisitAt') }}
+            </button>
+          </th>
+          <th class="w-28 px-4 py-3 text-right font-medium" [attr.aria-sort]="ariaSort('spent')">
+            <button type="button" class="cursor-pointer" (click)="sortBy('spent')">
+              Gasto total {{ sortMark('spent') }}
+            </button>
+          </th>
+          <th
+            class="w-28 px-4 py-3 text-right font-medium"
+            [attr.aria-sort]="ariaSort('avgTicket')"
+          >
+            <button type="button" class="cursor-pointer" (click)="sortBy('avgTicket')">
+              Ticket prom. {{ sortMark('avgTicket') }}
+            </button>
+          </th>
+          <th
+            class="w-32 px-4 py-3 text-right font-medium"
+            [attr.aria-sort]="ariaSort('walletBalance')"
+          >
+            <button type="button" class="cursor-pointer" (click)="sortBy('walletBalance')">
+              Monedero {{ sortMark('walletBalance') }}
+            </button>
+          </th>
+          <th class="w-36 px-4 py-3 text-left font-medium" [attr.aria-sort]="ariaSort('promos')">
+            <button type="button" class="cursor-pointer" (click)="sortBy('promos')">
+              Promociones {{ sortMark('promos') }}
+            </button>
+          </th>
+          <th class="w-28 px-4 py-3 text-left font-medium" [attr.aria-sort]="ariaSort('status')">
+            <button type="button" class="cursor-pointer" (click)="sortBy('status')">
+              Estado {{ sortMark('status') }}
+            </button>
+          </th>
+          <th class="px-4 py-3 text-left font-medium">Favoritos</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (customer of customers(); track customer.id) {
+          <tr>
+            <td class="px-4 py-3">
+              <p class="truncate font-medium" [title]="customer.name">
+                {{ customer.name || 'Sin nombre' }}
+              </p>
+              <div class="flex items-center gap-2 text-xs text-neutral-500">
+                <span>{{ phoneOf(customer) }}</span>
+                @if (phoneOf(customer) === customer.phone) {
+                  <button
+                    type="button"
+                    class="cursor-pointer text-black underline disabled:opacity-50"
+                    [disabled]="revealingId() === customer.id"
+                    (click)="revealPhone(customer)"
+                    [attr.aria-label]="'Ver el teléfono completo de ' + customer.name"
+                    title="Queda registrado quién lo vio"
+                  >
+                    Ver
+                  </button>
+                }
+              </div>
+            </td>
+            <td class="px-4 py-3 text-right">{{ customer.visits }}</td>
+            <td class="px-4 py-3">{{ customer.firstVisitAt | date: 'dd/MM/yy' }}</td>
+            <td class="px-4 py-3">{{ customer.lastVisitAt | date: 'dd/MM/yy' }}</td>
+            <td class="px-4 py-3 text-right">
+              {{ customer.spent | currency: 'MXN' : 'symbol-narrow' }}
+              <span class="block text-xs text-neutral-500">{{ customer.paidOrders }} pagadas</span>
+            </td>
+            <td class="px-4 py-3 text-right">
+              {{ customer.avgTicket | currency: 'MXN' : 'symbol-narrow' }}
+            </td>
+            <td class="px-4 py-3 text-right">
+              {{ customer.walletBalance | currency: 'MXN' : 'symbol-narrow' }}
+              <span class="block text-xs text-neutral-500"
+                >ganado {{ customer.cashbackEarned | currency: 'MXN' : 'symbol-narrow' }}</span
+              >
+            </td>
+            <td class="px-4 py-3">
+              {{ promosLabel(customer.promos) }}
+              @if (customer.promosAt) {
+                <span class="block text-xs text-neutral-500">{{
+                  customer.promosAt | date: 'dd/MM/yy'
+                }}</span>
+              }
+            </td>
+            <td class="px-4 py-3">
+              <span
+                class="badge inline-block rounded-full border px-2 py-0.5 text-xs"
+                [class]="statusBadge(customer.status)"
+                >{{ statusLabel(customer.status) }}</span
+              >
+            </td>
+            <td class="px-4 py-3 text-xs text-neutral-700">
+              {{ customer.favorites.join(', ') || '—' }}
+            </td>
+          </tr>
+        } @empty {
+          <app-empty-state
+            [loading]="loading()"
+            [isEmpty]="customers().length === 0"
+            [colspan]="10"
+            message="No hay clientes con estos filtros."
+          />
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-pagination
+    [total]="total()"
+    [pageFrom]="pageFrom()"
+    [pageTo]="pageTo()"
+    [canPrev]="canPrev()"
+    [canNext]="canNext()"
+    [currentLimit]="pagination().limit"
+    (previousPage)="prevPage()"
+    (nextPage)="nextPage()"
+    (limitChange)="changeLimit($event)"
+  />
+</div>

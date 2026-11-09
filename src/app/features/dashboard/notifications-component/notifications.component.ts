@@ -19,6 +19,12 @@ import {
 } from '../../../core/services/socket.service';
 import { TitleComponent } from '../../../shared/components/title/title';
 import { OrdersService } from '../../../core/services/orders.service';
+import {
+  loadOrder,
+  NotificationOrder,
+  saveOrder,
+  sortByDate,
+} from './notifications-order.util';
 
 @Component({
   selector: 'app-notifications-component',
@@ -80,7 +86,12 @@ export class NotificationsComponent implements OnDestroy {
   inactiveNotifications = signal<CashierNotification[]>([]);
   isLoading = signal<boolean>(true);
 
-  protected readonly visibleActive = computed(() => this.applyFilter(this.activeNotifications()));
+  /** Orden de "No leídas": por defecto lo más viejo arriba, como se atiende en caja. */
+  protected readonly order = signal<NotificationOrder>(loadOrder());
+
+  protected readonly visibleActive = computed(() =>
+    sortByDate(this.applyFilter(this.activeNotifications()), this.order())
+  );
   protected readonly visibleInactive = computed(() =>
     this.applyFilter(this.inactiveNotifications())
   );
@@ -115,6 +126,12 @@ export class NotificationsComponent implements OnDestroy {
   private applyFilter(notifications: CashierNotification[]): CashierNotification[] {
     const type = this.typeFilter();
     return type ? notifications.filter((n) => n.type === type) : notifications;
+  }
+
+  protected toggleOrder(): void {
+    const order: NotificationOrder = this.order() === 'oldest' ? 'newest' : 'oldest';
+    this.order.set(order);
+    saveOrder(order);
   }
 
   protected updateTypeFilter(event: Event): void {

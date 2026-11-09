@@ -158,13 +158,17 @@
         <input
           id="restaurantName"
           type="text"
-          class="w-full rounded-xl border border-black/10 px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+          class="w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+          [class]="fieldClass('name')"
           [value]="form().name"
           (input)="updateFormName($event)"
           required
           maxlength="80"
           aria-required="true"
         />
+        @if (fieldErrors()['name']; as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
       </div>
 
       @if (mode() === 'edit') {
@@ -176,11 +180,88 @@
             min="0"
             max="100"
             step="0.5"
-            class="w-full rounded-xl border border-black/10 px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+            class="w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+            [class]="fieldClass('walletPct')"
             [value]="form().walletPct"
             (input)="updateFormWalletPct($event)"
           />
+          @if (fieldErrors()['walletPct']; as message) {
+            <p class="text-xs text-red-600">{{ message }}</p>
+          }
           <p class="text-xs text-neutral-500">Se aplica a todas las sucursales del restaurante.</p>
+        </div>
+
+        <div class="space-y-1">
+          <label for="restaurantPrivacyUrl" class="text-sm font-medium"
+            >Aviso de privacidad del restaurante</label
+          >
+          <input
+            id="restaurantPrivacyUrl"
+            type="url"
+            placeholder="https://"
+            class="w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-black/20 focus:outline-none"
+            [class]="fieldClass('privacyUrl')"
+            [value]="form().privacyUrl ?? ''"
+            (input)="updateFormPrivacyUrl($event)"
+            maxlength="500"
+          />
+          @if (fieldErrors()['privacyUrl']; as message) {
+            <p class="text-xs text-red-600">{{ message }}</p>
+          }
+          <p class="text-xs text-neutral-500">
+            Opcional. El bot muestra siempre el aviso de BotBite y agrega este si lo tienes.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <span class="text-sm font-medium">Logo</span>
+          <div class="flex items-center gap-3">
+            @if (logoUrl(); as url) {
+              <img
+                [src]="url"
+                alt="Logo del restaurante"
+                class="size-16 rounded-xl border border-black/10 object-contain"
+              />
+            } @else {
+              <div
+                class="flex size-16 items-center justify-center rounded-xl border border-dashed border-black/20 text-xs text-neutral-400"
+              >
+                Sin logo
+              </div>
+            }
+            <input
+              #logoInput
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="hidden"
+              (change)="onLogoSelected($event)"
+              aria-label="Elegir el logo del restaurante"
+            />
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="btn-small"
+                [disabled]="logoSaving()"
+                (click)="logoInput.click()"
+              >
+                {{ logoSaving() ? 'Guardando...' : logoUrl() ? 'Cambiar logo' : 'Subir logo' }}
+              </button>
+              @if (logoUrl()) {
+                <button
+                  type="button"
+                  class="btn-small-danger"
+                  [disabled]="logoSaving()"
+                  (click)="removeLogo()"
+                >
+                  Quitar
+                </button>
+              }
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500">
+            PNG, JPG o WebP de hasta 5 MB. Se guarda en cuanto lo eliges y se ajusta a un cuadrado.
+            El bot lo muestra en la página del QR.
+          </p>
         </div>
       }
 

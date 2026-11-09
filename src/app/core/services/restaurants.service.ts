@@ -55,6 +55,17 @@ export class RestaurantsService {
     return this.http.patch<RestaurantResponse>(`${this.apiUrl}/restaurants/${id}`, updatedRestaurant);
   }
 
+  /** Sube el logo; la API lo deja cuadrado y avisa al bot. */
+  uploadLogo(id: string, file: File): Observable<RestaurantResponse> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.patch<RestaurantResponse>(`${this.apiUrl}/restaurants/${id}/logo`, form);
+  }
+
+  removeLogo(id: string): Observable<RestaurantResponse> {
+    return this.http.delete<RestaurantResponse>(`${this.apiUrl}/restaurants/${id}/logo`);
+  }
+
   remove(id: string): Observable<RestaurantResponse> {
     return this.http.delete<RestaurantResponse>(`${this.apiUrl}/restaurants/${id}`);
   }

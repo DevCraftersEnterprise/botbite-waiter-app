@@ -10,43 +10,56 @@
   (cancel)="close()"
   (confirm)="save()"
 >
+  @if (confirmLeave() && createdSecret()) {
+    <div class="mb-4 space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3" role="alert">
+      <p class="text-sm font-medium text-amber-900">
+        No has copiado la llave nueva. Al cerrar no se vuelve a mostrar.
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn-small bg-white" (click)="copySecret()">
+          Copiar llave
+        </button>
+        <button type="button" class="btn-small-danger bg-white" (click)="leaveWithoutCopying()">
+          Ya la guardé, cerrar
+        </button>
+      </div>
+    </div>
+  }
+
   @if (form(); as f) {
     <form (submit)="$event.preventDefault()" class="max-h-[65vh] space-y-6 overflow-y-auto pr-1">
       <section class="space-y-3">
         <h3 class="text-sm font-semibold">Ubicación</h3>
         <div class="grid gap-3 md:grid-cols-3">
-          <div class="space-y-1">
-            <label for="botLatitude" class="text-sm font-medium">Latitud</label>
+          <div class="space-y-1 md:col-span-2">
+            <label for="botCoordinates" class="text-sm font-medium">Coordenadas</label>
             <input
-              id="botLatitude"
+              id="botCoordinates"
               class="input"
+              [class]="invalidClass('coordinates')"
               inputmode="decimal"
-              placeholder="27.535038"
-              [value]="f.latitude"
-              (input)="updateText('latitude', $event)"
+              placeholder="27.535038, -109.954031"
+              [value]="f.coordinates"
+              (input)="updateText('coordinates', $event)"
             />
-          </div>
-          <div class="space-y-1">
-            <label for="botLongitude" class="text-sm font-medium">Longitud</label>
-            <input
-              id="botLongitude"
-              class="input"
-              inputmode="decimal"
-              placeholder="-109.954031"
-              [value]="f.longitude"
-              (input)="updateText('longitude', $event)"
-            />
+            <p class="text-xs text-neutral-500">
+              Pégalas como las copia Google Maps (latitud, longitud). Se guardan con 6 decimales.
+            </p>
           </div>
           <div class="space-y-1">
             <label for="botRadius" class="text-sm font-medium">Radio (metros)</label>
             <input
               id="botRadius"
               class="input"
+              [class]="invalidClass('geofenceMeters')"
               type="number"
               min="10"
               [value]="f.geofenceMeters"
               (input)="updateNumber('geofenceMeters', $event)"
             />
+            @if (errorOf('geofenceMeters'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -61,11 +74,24 @@
             Verificar que el comensal esté en el restaurante
           </label>
         </div>
+        @if (!f.verifyLocation) {
+          <p
+            class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          >
+            Sin verificar la ubicación, cualquiera con el QR puede pedir desde fuera del
+            restaurante. Úsalo solo para pruebas y vuelve a encenderlo antes de abrir.
+          </p>
+        }
         @if (coordinatesMissing()) {
-          <p class="text-sm text-red-600">Para verificar la ubicación captura latitud y longitud.</p>
+          <p class="text-sm text-red-600">Para verificar la ubicación captura las coordenadas.</p>
         }
         @if (coordinatesInvalid()) {
-          <p class="text-sm text-red-600">La latitud o la longitud no son válidas.</p>
+          <p class="text-sm text-red-600">
+            No se entienden las coordenadas. Escribe la latitud y la longitud separadas por coma.
+          </p>
+        }
+        @if (errorOf('coordinates'); as message) {
+          <p class="text-sm text-red-600">{{ message }}</p>
         }
       </section>
 
@@ -77,63 +103,93 @@
             <input
               id="botClose"
               class="input"
+              [class]="invalidClass('dailyCloseTime')"
               type="time"
               [value]="f.dailyCloseTime"
               (input)="updateText('dailyCloseTime', $event)"
             />
+            @if (errorOf('dailyCloseTime'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
           <div class="space-y-1">
             <label for="botTimezone" class="text-sm font-medium">Zona horaria</label>
             <input
               id="botTimezone"
               class="input"
+              [class]="invalidClass('timezone')"
               [value]="f.timezone"
               (input)="updateText('timezone', $event)"
             />
+            @if (errorOf('timezone'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
           <div class="space-y-1">
-            <label for="botQrMinutes" class="text-sm font-medium">Vigencia del código QR (min)</label>
+            <label for="botQrMinutes" class="text-sm font-medium"
+              >Vigencia del código QR (min)</label
+            >
             <input
               id="botQrMinutes"
               class="input"
+              [class]="invalidClass('qrCodeMinutes')"
               type="number"
               min="1"
               [value]="f.qrCodeMinutes"
               (input)="updateNumber('qrCodeMinutes', $event)"
             />
+            @if (errorOf('qrCodeMinutes'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
           <div class="space-y-1">
-            <label for="botSessionHours" class="text-sm font-medium">Duración de la sesión (horas)</label>
+            <label for="botSessionHours" class="text-sm font-medium"
+              >Duración de la sesión (horas)</label
+            >
             <input
               id="botSessionHours"
               class="input"
+              [class]="invalidClass('sessionHours')"
               type="number"
               min="1"
               [value]="f.sessionHours"
               (input)="updateNumber('sessionHours', $event)"
             />
+            @if (errorOf('sessionHours'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
           <div class="space-y-1">
             <label for="botPostSale" class="text-sm font-medium">Posventa (horas)</label>
             <input
               id="botPostSale"
               class="input"
+              [class]="invalidClass('postSaleHours')"
               type="number"
               min="0"
               [value]="f.postSaleHours"
               (input)="updateNumber('postSaleHours', $event)"
             />
+            @if (errorOf('postSaleHours'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
           <div class="space-y-1">
-            <label for="botRecommendations" class="text-sm font-medium">Máximo de recomendaciones</label>
+            <label for="botRecommendations" class="text-sm font-medium"
+              >Máximo de recomendaciones</label
+            >
             <input
               id="botRecommendations"
               class="input"
+              [class]="invalidClass('maxRecommendations')"
               type="number"
               min="0"
               [value]="f.maxRecommendations"
               (input)="updateNumber('maxRecommendations', $event)"
             />
+            @if (errorOf('maxRecommendations'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
         </div>
         <div class="space-y-1">
@@ -141,10 +197,14 @@
           <input
             id="botTables"
             class="input"
+            [class]="invalidClass('validTables')"
             placeholder="1, 2, A3, TERRAZA 2"
             [value]="f.validTables"
             (input)="updateText('validTables', $event)"
           />
+          @if (errorOf('validTables'); as message) {
+            <p class="text-xs text-red-600">{{ message }}</p>
+          }
           <p class="text-xs text-neutral-500">Sepáralas con comas. Vacío acepta cualquier mesa.</p>
         </div>
         <div class="space-y-1">
@@ -152,10 +212,14 @@
           <input
             id="botSurvey"
             class="input"
+            [class]="invalidClass('surveyUrl')"
             type="url"
             [value]="f.surveyUrl"
             (input)="updateText('surveyUrl', $event)"
           />
+          @if (errorOf('surveyUrl'); as message) {
+            <p class="text-xs text-red-600">{{ message }}</p>
+          }
         </div>
       </section>
 
@@ -187,38 +251,76 @@
           <div class="grid gap-3 md:grid-cols-2">
             <div class="space-y-1">
               <label for="botSlug" class="text-sm font-medium">Slug</label>
-              <input
-                id="botSlug"
-                class="input"
-                maxlength="60"
-                [value]="f.slug"
-                (input)="updateText('slug', $event)"
-              />
+              <div class="flex items-stretch">
+                @if (restaurantSlug(); as prefix) {
+                  <span
+                    class="flex items-center rounded-l-xl border border-r-0 border-black/10 bg-neutral-50 px-3 text-sm text-neutral-500"
+                    >{{ prefix }}-</span
+                  >
+                }
+                <input
+                  id="botSlug"
+                  class="input"
+                  [class.rounded-l-none]="!!restaurantSlug()"
+                  [class]="invalidClass('slugSuffix')"
+                  maxlength="60"
+                  [value]="f.slugSuffix"
+                  (input)="updateText('slugSuffix', $event)"
+                />
+              </div>
+              @if (errorOf('slugSuffix'); as message) {
+                <p class="text-xs text-red-600">{{ message }}</p>
+              }
               <p class="text-xs text-neutral-500">
                 Va en el QR. Si lo cambias, hay que generar e imprimir el QR de nuevo.
               </p>
             </div>
             <div class="space-y-1">
-              <label for="botPhoneId" class="text-sm font-medium">phone_number_id de Meta</label>
+              <label for="botPhoneId" class="text-sm font-medium">Phone number ID de Meta</label>
               <input
                 id="botPhoneId"
                 class="input"
+                [class]="invalidClass('whatsappPhoneNumberId')"
                 inputmode="numeric"
                 [value]="f.whatsappPhoneNumberId"
                 (input)="updateText('whatsappPhoneNumberId', $event)"
               />
+              @if (errorOf('whatsappPhoneNumberId'); as message) {
+                <p class="text-xs text-red-600">{{ message }}</p>
+              }
+              <p class="text-xs text-neutral-500">
+                Está en WhatsApp Manager › Números de teléfono. No es el ID de la cuenta (WABA) ni
+                el teléfono.
+              </p>
             </div>
           </div>
           <div class="space-y-1">
-            <label for="botBaseUrl" class="text-sm font-medium">URL base de los webhooks</label>
+            <label for="botBaseUrl" class="text-sm font-medium">URL base del mesero</label>
             <input
               id="botBaseUrl"
               class="input"
+              [class]="invalidClass('botBaseUrl')"
               type="url"
-              placeholder="https://mesero.ejemplo.com/punto-de-union/cocorit"
+              [placeholder]="suggestedBaseUrl()"
               [value]="f.botBaseUrl"
               (input)="updateText('botBaseUrl', $event)"
             />
+            @if (errorOf('botBaseUrl'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
+            @if (f.botBaseUrl.trim() !== suggestedBaseUrl()) {
+              <p class="text-xs text-neutral-500">
+                La del mesero es <code>{{ suggestedBaseUrl() }}</code
+                >.
+                <button
+                  type="button"
+                  class="cursor-pointer font-medium text-black underline"
+                  (click)="useSuggestedBaseUrl()"
+                >
+                  Usar esa
+                </button>
+              </p>
+            }
           </div>
         </section>
 
@@ -230,11 +332,13 @@
               <p class="text-sm font-medium text-amber-900">
                 Cópiala ahora: no se volverá a mostrar.
               </p>
-              <code class="block rounded-lg bg-white px-2 py-1 text-xs break-all" data-testid="bot-secret">{{
-                secret
-              }}</code>
+              <code
+                class="block rounded-lg bg-white px-2 py-1 text-xs break-all"
+                data-testid="bot-secret"
+                >{{ secret }}</code
+              >
               <button type="button" class="btn-small bg-white" (click)="copySecret()">
-                Copiar
+                {{ secretCopied() ? 'Copiada' : 'Copiar' }}
               </button>
             </div>
           }
@@ -296,7 +400,9 @@
                 }
               </li>
             } @empty {
-              <li class="px-4 py-3 text-sm text-neutral-500">Aún no hay llaves para esta sucursal.</li>
+              <li class="px-4 py-3 text-sm text-neutral-500">
+                Aún no hay llaves para esta sucursal.
+              </li>
             }
           </ul>
         </section>

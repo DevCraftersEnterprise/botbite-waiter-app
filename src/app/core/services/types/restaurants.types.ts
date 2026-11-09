@@ -6,6 +6,8 @@ export interface Restaurant {
   slug: string;
   walletPct: number;
   logoUrl?: string | null;
+  /** Aviso de privacidad propio; el de BotBite se muestra siempre. */
+  privacyUrl?: string | null;
   isActive: boolean;
   userId: string;
   createdAt: Date | string;
