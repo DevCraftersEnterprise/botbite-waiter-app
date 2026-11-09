@@ -14,6 +14,7 @@ export interface RestaurantForm {
   readonly id?: string;
   name: string;
   walletPct?: number;
+  privacyUrl?: string;
   isActive: boolean;
 }
 

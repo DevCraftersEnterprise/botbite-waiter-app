@@ -64,6 +64,7 @@ describe('BotConfigModalComponent', () => {
       invoicing: false,
       promotions: false,
       survey: false,
+      languages: true,
     },
   };
 
@@ -107,6 +108,7 @@ describe('BotConfigModalComponent', () => {
     expect(coordinates.value).toBe('27.535038, -109.954031');
     expect(text()).toContain('sushilito-s-');
     expect(text()).toContain('https://bot.botbite.com.mx/m/sushilito-s-morelos');
+    expect(text()).toContain('Idiomas (apagado: solo en español)');
   });
 
   it('rounds pasted coordinates and does not send an unchanged slug', async () => {

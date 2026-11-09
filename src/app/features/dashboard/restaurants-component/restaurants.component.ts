@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
-import { catchError, EMPTY, finalize } from 'rxjs';
+import { catchError, EMPTY, finalize, Observable } from 'rxjs';
 import {
   FieldErrors,
   formErrorSummary,
@@ -12,7 +12,10 @@ import { IconsService } from '../../../core/services/icons.service';
 import { OrgService } from '../../../core/services/org.service';
 import { RestaurantsService } from '../../../core/services/restaurants.service';
 import { Mode } from '../../../core/services/types/common.types';
-import { Restaurant } from '../../../core/services/types/restaurants.types';
+import {
+  Restaurant,
+  RestaurantResponse,
+} from '../../../core/services/types/restaurants.types';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
@@ -20,6 +23,9 @@ import { TitleComponent } from '../../../shared/components/title/title';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
 import { RestaurantForm } from '../../../core/services/forms/forms.interfaces';
+
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const LOGO_MAX_BYTES = 5 * 1024 * 1024;
 
 @Component({
   selector: 'app-restaurants.component',
@@ -49,6 +55,10 @@ export class RestaurantsComponent {
 
   /** Lo que rechazó la API, junto a su campo. */
   readonly fieldErrors = signal<FieldErrors>({});
+
+  /** Logo del restaurante que se edita; se sube aparte, al elegirlo. */
+  readonly logoUrl = signal<string | null>(null);
+  readonly logoSaving = signal(false);
 
   readonly form = signal<RestaurantForm>({
     name: '',
@@ -163,13 +173,16 @@ export class RestaurantsComponent {
       id: restaurant.id,
       name: restaurant.name,
       walletPct: Number(restaurant.walletPct),
+      privacyUrl: restaurant.privacyUrl ?? '',
       isActive: restaurant.isActive,
     });
+    this.logoUrl.set(restaurant.logoUrl ?? null);
   }
 
   closeModal(): void {
     this.mode.set(null);
     this.fieldErrors.set({});
+    this.logoUrl.set(null);
     this.form.set({ name: '', isActive: true });
   }
 
@@ -184,7 +197,10 @@ export class RestaurantsComponent {
     const restaurantData: Partial<Restaurant> = {
       name: formValue.name.trim(),
       isActive: formValue.isActive,
-      ...(this.mode() === 'edit' && { walletPct: formValue.walletPct }),
+      ...(this.mode() === 'edit' && {
+        walletPct: formValue.walletPct,
+        privacyUrl: formValue.privacyUrl?.trim() || null,
+      }),
     };
 
     const operation =
@@ -196,7 +212,7 @@ export class RestaurantsComponent {
       .pipe(
         catchError((error) => {
           console.error('Error saving restaurant:', error);
-          const errors = toFormErrors(error, ['name', 'walletPct']);
+          const errors = toFormErrors(error, ['name', 'walletPct', 'privacyUrl']);
           this.fieldErrors.set(errors.fields);
           this.toastrService.error(formErrorSummary(errors));
           return EMPTY;
@@ -253,6 +269,55 @@ export class RestaurantsComponent {
     const input = event.target as HTMLInputElement;
     this.form.update((form) => ({ ...form, walletPct: Number(input.value) }));
     this.clearFieldError('walletPct');
+  }
+
+  updateFormPrivacyUrl(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.form.update((form) => ({ ...form, privacyUrl: input.value }));
+    this.clearFieldError('privacyUrl');
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    const id = this.form().id;
+    if (!file || !id) return;
+
+    if (!LOGO_TYPES.includes(file.type)) {
+      this.toastrService.error('El logo debe ser PNG, JPG o WebP');
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      this.toastrService.error('El logo debe pesar menos de 5 MB');
+      return;
+    }
+
+    this.changeLogo(this.restaurantsService.uploadLogo(id, file), 'Logo actualizado');
+  }
+
+  removeLogo(): void {
+    const id = this.form().id;
+    if (id) this.changeLogo(this.restaurantsService.removeLogo(id), 'Logo quitado');
+  }
+
+  private changeLogo(request: Observable<RestaurantResponse>, success: string): void {
+    this.logoSaving.set(true);
+    request
+      .pipe(
+        catchError((error) => {
+          console.error('Error saving restaurant logo:', error);
+          this.toastrService.error(formErrorSummary(toFormErrors(error, [])));
+          return EMPTY;
+        }),
+        finalize(() => this.logoSaving.set(false))
+      )
+      .subscribe(({ restaurant }) => {
+        this.logoUrl.set(restaurant.logoUrl ?? null);
+        this.toastrService.success(success);
+        this.fetch();
+        this.orgService.loadRestaurants().subscribe();
+      });
   }
 
   fieldClass(field: string): string {
