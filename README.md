@@ -94,7 +94,8 @@ src/app/
 | Menús | client | Menús por sucursal, items, precios, recomendados y PDF. El menú completo se importa por CSV con vista previa, se exporta y tiene plantilla |
 | Órdenes | user | Mesas con cuenta abierta y sus rondas, en vivo. El personal mueve las comandas, cobra las cuentas y abre sus propias cuentas |
 | Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy |
-| Notificaciones | user | Avisos de caja en tiempo real, por tipo; se marcan como atendidos |
+| Clientes | client | Clientes del restaurante: visitas, consumo, monedero, promociones, estado y favoritos, con filtros, orden y totales. El teléfono sale oculto; verlo completo y exportar a CSV quedan registrados, y la exportación se activa desde la API |
+| Notificaciones | user | Avisos de caja en tiempo real, por tipo; lo más viejo arriba en "No leídas", con un botón para invertir el orden |
 
 ### Mesero digital
 En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp: ubicación y radio, hora de cierre, mesas válidas y encuesta.

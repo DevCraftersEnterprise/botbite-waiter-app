@@ -102,6 +102,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'customers',
+        canActivate: [clientGuard],
+        loadComponent: () =>
+          import('./features/dashboard/customers-component/customers.component').then(
+            (m) => m.CustomersComponent
+          ),
+      },
+      {
         path: 'notifications',
         canActivate: [userGuard],
         loadComponent: () =>
