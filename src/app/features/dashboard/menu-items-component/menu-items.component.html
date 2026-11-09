@@ -7,6 +7,53 @@
 
     <div class="actions-bar">
       <button
+        class="btn-secondary btn-full"
+        (click)="downloadCsvTemplate()"
+        aria-label="Descargar la plantilla CSV del menú"
+      >
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon
+            [img]="iconsService.download"
+            size="15"
+            color="black"
+            aria-hidden="true"
+          ></lucide-icon>
+          <span>Plantilla CSV</span>
+        </div>
+      </button>
+      <button
+        class="btn-secondary btn-full"
+        (click)="exportCsv()"
+        [disabled]="!menuId() || exporting()"
+        aria-label="Exportar el menú a CSV"
+      >
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon
+            [img]="iconsService.downloadFile"
+            size="15"
+            color="black"
+            aria-hidden="true"
+          ></lucide-icon>
+          <span>{{ exporting() ? 'Exportando...' : 'Exportar CSV' }}</span>
+        </div>
+      </button>
+      <button
+        class="btn-secondary btn-full"
+        (click)="showCsvImport.set(true)"
+        [disabled]="!menuId()"
+        aria-label="Importar el menú desde CSV"
+      >
+        <div class="flex items-center justify-center gap-2">
+          <lucide-icon
+            [img]="iconsService.uploadFile"
+            size="15"
+            color="black"
+            aria-hidden="true"
+          ></lucide-icon>
+          <span>Importar CSV</span>
+        </div>
+      </button>
+      <button
         class="btn-primary btn-full"
         (click)="openAddProductsModal()"
         [disabled]="!menuId()"
@@ -103,7 +150,9 @@
                 </span>
               </div>
             </td>
-            <td class="w-24 px-4 py-3 text-right">{{ menuItem.price | currency: 'MXN' : 'symbol-narrow' }}</td>
+            <td class="w-24 px-4 py-3 text-right">
+              {{ menuItem.price | currency: 'MXN' : 'symbol-narrow' }}
+            </td>
             <td class="px-4 py-3">
               <div class="flex flex-wrap items-center justify-end gap-2">
                 <!-- Recomendar -->
@@ -144,9 +193,7 @@
                   [attr.aria-label]="
                     (menuItem.isActive ? 'Desactivar ' : 'Activar ') + menuItem.product.name
                   "
-                  [title]="
-                    (menuItem.isActive ? 'Desactivar ' : 'Activar ') + menuItem.product.name
-                  "
+                  [title]="(menuItem.isActive ? 'Desactivar ' : 'Activar ') + menuItem.product.name"
                 >
                   <div class="flex items-center justify-center gap-1">
                     <lucide-icon
@@ -247,7 +294,8 @@
           placeholder="Ej: PIZZA BONELESS"
         />
         <p class="text-xs text-neutral-500">
-          Usa la misma familia en las variantes de un platillo para que el mesero pregunte cuál quieren.
+          Usa la misma familia en las variantes de un platillo para que el mesero pregunte cuál
+          quieren.
         </p>
       </div>
 
@@ -344,3 +392,12 @@
     <p class="text-sm text-neutral-600">{{ confirmMessage() }}</p>
   </app-modal>
 </div>
+
+@if (menuId(); as currentMenuId) {
+  <app-menu-csv-import
+    [menuId]="currentMenuId"
+    [isOpen]="showCsvImport()"
+    (closed)="showCsvImport.set(false)"
+    (imported)="onCsvImported()"
+  />
+}

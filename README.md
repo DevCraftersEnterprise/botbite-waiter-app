@@ -90,8 +90,8 @@ src/app/
 | Categorías | client | Categorías del restaurante y su orden en el menú |
 | Restaurantes | user | Restaurantes propios (los cajeros ven solo los de sus sucursales) |
 | Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal, **personal** y **mesero digital** |
-| Productos | client | Catálogo, carga masiva por CSV y fotos |
-| Menús | client | Menús por sucursal, items, precios, recomendados y PDF |
+| Productos | client | Catálogo y fotos |
+| Menús | client | Menús por sucursal, items, precios, recomendados y PDF. El menú completo se importa por CSV con vista previa, se exporta y tiene plantilla |
 | Órdenes | user | Mesas con cuenta abierta y sus rondas, en vivo. El personal mueve las comandas, cobra las cuentas y abre sus propias cuentas |
 | Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy |
 | Notificaciones | user | Avisos de caja en tiempo real, por tipo; se marcan como atendidos |
