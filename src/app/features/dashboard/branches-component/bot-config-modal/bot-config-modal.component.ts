@@ -12,6 +12,7 @@ import {
 import { LucideAngularModule } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, EMPTY, finalize } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 import { AuthService } from '../../../../core/services/auth.service';
 import { BotService } from '../../../../core/services/bot.service';
 import { IconsService } from '../../../../core/services/icons.service';
@@ -23,13 +24,20 @@ import {
   UpdateBotConfig,
 } from '../../../../core/services/types/bot.types';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
+import {
+  FieldErrors,
+  formErrorSummary,
+  toFormErrors,
+} from '../../../../shared/utils/api-errors.util';
+import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/coordinates.util';
 
 interface BotConfigForm {
-  slug: string;
+  /** Lo que va después del prefijo del restaurante. */
+  slugSuffix: string;
   whatsappPhoneNumberId: string;
   botBaseUrl: string;
-  latitude: string;
-  longitude: string;
+  /** Latitud y longitud en un solo campo, como las copia Google Maps. */
+  coordinates: string;
   verifyLocation: boolean;
   geofenceMeters: number;
   qrCodeMinutes: number;
@@ -44,11 +52,10 @@ interface BotConfigForm {
 }
 
 type TextField =
-  | 'slug'
+  | 'slugSuffix'
   | 'whatsappPhoneNumberId'
   | 'botBaseUrl'
-  | 'latitude'
-  | 'longitude'
+  | 'coordinates'
   | 'validTables'
   | 'timezone'
   | 'dailyCloseTime'
@@ -61,6 +68,31 @@ type NumberField =
   | 'postSaleHours'
   | 'maxRecommendations';
 
+/** Campos que la API puede rechazar; los errores se muestran junto a ellos. */
+const API_FIELDS = [
+  'slug',
+  'whatsappPhoneNumberId',
+  'botBaseUrl',
+  'latitude',
+  'longitude',
+  'geofenceMeters',
+  'qrCodeMinutes',
+  'validTables',
+  'sessionHours',
+  'postSaleHours',
+  'maxRecommendations',
+  'timezone',
+  'dailyCloseTime',
+  'surveyUrl',
+] as const;
+
+/** Qué campo del formulario muestra el error de cada campo de la API. */
+const FORM_FIELD: Partial<Record<(typeof API_FIELDS)[number], TextField | NumberField>> = {
+  slug: 'slugSuffix',
+  latitude: 'coordinates',
+  longitude: 'coordinates',
+};
+
 const FEATURES: { key: keyof BotFeatures; label: string }[] = [
   { key: 'interactiveMenu', label: 'Menú interactivo' },
   { key: 'pdfMenu', label: 'Menú en PDF' },
@@ -72,12 +104,22 @@ const FEATURES: { key: keyof BotFeatures; label: string }[] = [
   { key: 'survey', label: 'Encuesta' },
 ];
 
-const toForm = (config: BotConfig): BotConfigForm => ({
-  slug: config.slug,
+/** El prefijo del restaurante es fijo: solo se edita lo que sigue. */
+export const splitSlug = (slug: string, restaurantSlug: string | null) =>
+  restaurantSlug && slug.startsWith(`${restaurantSlug}-`)
+    ? slug.slice(restaurantSlug.length + 1)
+    : slug;
+
+export const joinSlug = (suffix: string, restaurantSlug: string | null) => {
+  const clean = suffix.trim().replace(/^-+/, '');
+  return restaurantSlug ? `${restaurantSlug}-${clean}` : clean;
+};
+
+const toForm = (config: BotConfig, restaurantSlug: string | null): BotConfigForm => ({
+  slugSuffix: splitSlug(config.slug, restaurantSlug),
   whatsappPhoneNumberId: config.whatsappPhoneNumberId ?? '',
   botBaseUrl: config.botBaseUrl ?? '',
-  latitude: config.latitude?.toString() ?? '',
-  longitude: config.longitude?.toString() ?? '',
+  coordinates: formatCoordinates(config.latitude, config.longitude),
   verifyLocation: config.verifyLocation,
   geofenceMeters: config.geofenceMeters,
   qrCodeMinutes: config.qrCodeMinutes,
@@ -90,9 +132,6 @@ const toForm = (config: BotConfig): BotConfigForm => ({
   surveyUrl: config.surveyUrl ?? '',
   features: config.features,
 });
-
-const toCoordinate = (value: string): number | null =>
-  value.trim() === '' ? null : Number(value);
 
 @Component({
   selector: 'app-bot-config-modal',
@@ -115,8 +154,11 @@ export class BotConfigModalComponent {
   protected readonly features = FEATURES;
 
   protected readonly form = signal<BotConfigForm | null>(null);
+  /** El slug como está guardado: solo se manda si cambia. */
+  private readonly savedSlug = signal('');
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
+  protected readonly fieldErrors = signal<FieldErrors>({});
 
   protected readonly keys = signal<BotKey[]>([]);
   protected readonly newKeyName = signal('');
@@ -124,6 +166,9 @@ export class BotConfigModalComponent {
   protected readonly revokingKeyId = signal<string | null>(null);
   /** Llave recién creada: es la única vez que se puede ver completa. */
   protected readonly createdSecret = signal<string | null>(null);
+  protected readonly secretCopied = signal(false);
+  /** Se quiso cerrar con una llave sin copiar: se pide confirmación. */
+  protected readonly confirmLeave = signal(false);
 
   /** La conexión con el servicio del mesero, las funciones y las llaves las administra BotBite. */
   protected readonly isAdmin = computed(() => {
@@ -131,21 +176,27 @@ export class BotConfigModalComponent {
     return roles.includes('super') || roles.includes('admin');
   });
 
-  protected readonly coordinatesMissing = computed(() => {
+  protected readonly restaurantSlug = computed(() => this.branch()?.restaurant?.slug ?? null);
+
+  protected readonly slug = computed(() => {
     const f = this.form();
-    return !!f && f.verifyLocation && (!f.latitude.trim() || !f.longitude.trim());
+    return f ? joinSlug(f.slugSuffix, this.restaurantSlug()) : '';
   });
 
-  protected readonly coordinatesInvalid = computed(() => {
+  /** URL base que espera el servicio del mesero: el dominio del bot más el slug. */
+  protected readonly suggestedBaseUrl = computed(() => `${environment.botUrl}/m/${this.slug()}`);
+
+  protected readonly parsedCoordinates = computed(() => {
     const f = this.form();
-    if (!f) return false;
-    const invalid = (value: string, limit: number) => {
-      if (value.trim() === '') return false;
-      const number = Number(value);
-      return Number.isNaN(number) || Math.abs(number) > limit;
-    };
-    return invalid(f.latitude, 90) || invalid(f.longitude, 180);
+    return f ? parseCoordinates(f.coordinates) : null;
   });
+
+  protected readonly coordinatesMissing = computed(() => {
+    const f = this.form();
+    return !!f && f.verifyLocation && this.parsedCoordinates() === null;
+  });
+
+  protected readonly coordinatesInvalid = computed(() => this.parsedCoordinates() === 'invalid');
 
   protected readonly canSave = computed(() => {
     const f = this.form();
@@ -154,6 +205,7 @@ export class BotConfigModalComponent {
       !this.loading() &&
       !!f.dailyCloseTime &&
       !!f.timezone.trim() &&
+      !!f.slugSuffix.trim() &&
       !this.coordinatesMissing() &&
       !this.coordinatesInvalid()
     );
@@ -166,6 +218,9 @@ export class BotConfigModalComponent {
       this.form.set(null);
       this.keys.set([]);
       this.createdSecret.set(null);
+      this.secretCopied.set(false);
+      this.confirmLeave.set(false);
+      this.fieldErrors.set({});
       this.newKeyName.set('');
 
       if (branch) this.load(branch.id);
@@ -186,7 +241,10 @@ export class BotConfigModalComponent {
         }),
         finalize(() => this.loading.set(false))
       )
-      .subscribe((config) => this.form.set(toForm(config)));
+      .subscribe((config) => {
+        this.savedSlug.set(config.slug);
+        this.form.set(toForm(config, this.restaurantSlug()));
+      });
 
     if (this.isAdmin()) this.loadKeys(branchId);
   }
@@ -204,18 +262,31 @@ export class BotConfigModalComponent {
       .subscribe((keys) => this.keys.set(keys));
   }
 
+  protected errorOf(field: TextField | NumberField): string | null {
+    return this.fieldErrors()[field] ?? null;
+  }
+
+  /** Borde rojo en el campo que rechazó la API. */
+  protected invalidClass(field: TextField | NumberField): string {
+    return this.errorOf(field) ? 'border-red-500 bg-red-50/40' : '';
+  }
+
   protected updateText(key: TextField, ev: Event): void {
     const { value } = ev.target as HTMLInputElement;
-    this.patchForm({ [key]: value });
+    this.patchForm({ [key]: value }, key);
   }
 
   protected updateNumber(key: NumberField, ev: Event): void {
     const { value } = ev.target as HTMLInputElement;
-    this.patchForm({ [key]: Number(value) });
+    this.patchForm({ [key]: Number(value) }, key);
   }
 
   protected updateVerifyLocation(ev: Event): void {
-    this.patchForm({ verifyLocation: (ev.target as HTMLInputElement).checked });
+    this.patchForm({ verifyLocation: (ev.target as HTMLInputElement).checked }, 'coordinates');
+  }
+
+  protected useSuggestedBaseUrl(): void {
+    this.patchForm({ botBaseUrl: this.suggestedBaseUrl() }, 'botBaseUrl');
   }
 
   protected updateFeature(key: keyof BotFeatures, ev: Event): void {
@@ -224,8 +295,15 @@ export class BotConfigModalComponent {
     if (current) this.patchForm({ features: { ...current.features, [key]: checked } });
   }
 
-  private patchForm(changes: Partial<BotConfigForm>): void {
+  private patchForm(changes: Partial<BotConfigForm>, field?: TextField | NumberField): void {
     this.form.update((f) => (f ? { ...f, ...changes } : f));
+    if (field && this.fieldErrors()[field]) {
+      this.fieldErrors.update((errors) => {
+        const next = { ...errors };
+        delete next[field];
+        return next;
+      });
+    }
   }
 
   protected save(): void {
@@ -235,32 +313,40 @@ export class BotConfigModalComponent {
     if (!branch || !f || !this.canSave()) return;
 
     this.saving.set(true);
+    this.fieldErrors.set({});
 
     this.botService
       .updateConfig(branch.id, this.toChanges(f))
       .pipe(
         catchError((e) => {
           console.error('Error saving bot config:', e);
-          this.toastrService.error(
-            e?.status === 409
-              ? 'El slug o el phone_number_id ya lo usa otra sucursal'
-              : 'No se pudo guardar. Revisa los datos.'
-          );
+          const errors = toFormErrors(e, API_FIELDS);
+          const byFormField: FieldErrors = {};
+          for (const [field, message] of Object.entries(errors.fields)) {
+            const formField = FORM_FIELD[field as (typeof API_FIELDS)[number]] ?? field;
+            byFormField[formField] ??= message;
+          }
+          this.fieldErrors.set(byFormField);
+          this.toastrService.error(formErrorSummary(errors));
           return EMPTY;
         }),
         finalize(() => this.saving.set(false))
       )
       .subscribe(() => {
         this.toastrService.success('Configuración guardada');
+        this.savedSlug.set(this.slug());
         this.saved.emit();
-        this.closed.emit();
+        this.close();
       });
   }
 
   private toChanges(f: BotConfigForm): UpdateBotConfig {
+    const coordinates = this.parsedCoordinates();
+    const located = coordinates && coordinates !== 'invalid' ? coordinates : null;
+
     const changes: UpdateBotConfig = {
-      latitude: toCoordinate(f.latitude),
-      longitude: toCoordinate(f.longitude),
+      latitude: located?.latitude ?? null,
+      longitude: located?.longitude ?? null,
       verifyLocation: f.verifyLocation,
       geofenceMeters: f.geofenceMeters,
       qrCodeMinutes: f.qrCodeMinutes,
@@ -275,9 +361,11 @@ export class BotConfigModalComponent {
 
     if (!this.isAdmin()) return changes;
 
+    const slug = this.slug();
     return {
       ...changes,
-      slug: f.slug.trim(),
+      // Solo si cambia: los slugs anteriores al estándar se guardan tal cual.
+      ...(slug !== this.savedSlug() ? { slug } : {}),
       whatsappPhoneNumberId: f.whatsappPhoneNumberId.trim() || null,
       botBaseUrl: f.botBaseUrl.trim() || null,
       features: f.features,
@@ -309,6 +397,7 @@ export class BotConfigModalComponent {
       .subscribe(({ key, secret }) => {
         this.keys.update((keys) => [key, ...keys]);
         this.createdSecret.set(secret);
+        this.secretCopied.set(false);
         this.newKeyName.set('');
       });
   }
@@ -319,7 +408,10 @@ export class BotConfigModalComponent {
 
     navigator.clipboard
       .writeText(secret)
-      .then(() => this.toastrService.success('Llave copiada'))
+      .then(() => {
+        this.secretCopied.set(true);
+        this.toastrService.success('Llave copiada');
+      })
       .catch(() => this.toastrService.error('No se pudo copiar. Selecciónala a mano.'));
   }
 
@@ -345,7 +437,17 @@ export class BotConfigModalComponent {
       });
   }
 
+  /** Con una llave nueva sin copiar, primero se confirma: no se vuelve a mostrar. */
   protected close(): void {
+    if (this.createdSecret() && !this.secretCopied()) {
+      this.confirmLeave.set(true);
+      return;
+    }
+    this.closed.emit();
+  }
+
+  protected leaveWithoutCopying(): void {
+    this.secretCopied.set(true);
     this.closed.emit();
   }
 }

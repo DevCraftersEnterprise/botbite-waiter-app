@@ -140,6 +140,39 @@ export class MenuItemsComponent {
     );
   });
 
+  /** Se empezó a llenar el diálogo: desde ahí se marca en rojo lo que falta. */
+  protected readonly touched = signal(false);
+
+  protected readonly missingFields = computed(() => {
+    const missing: ('category' | 'price' | 'products')[] = [];
+    if (this.selectedCategoryId() === '') missing.push('category');
+    if (!(this.productPrice() > 0)) missing.push('price');
+    if (this.mode() === 'create' && this.selectedProductIds().length === 0) {
+      missing.push('products');
+    }
+    return missing;
+  });
+
+  /** Dice qué falta junto al botón Guardar, que está deshabilitado. */
+  protected readonly missingText = computed(() => {
+    const labels = { category: 'la categoría', price: 'el precio', products: 'elegir productos' };
+    const missing = this.missingFields().map((field) => labels[field]);
+    if (!missing.length) return '';
+    const list =
+      missing.length === 1
+        ? missing[0]
+        : `${missing.slice(0, -1).join(', ')} y ${missing[missing.length - 1]}`;
+    return `Para guardar falta ${list}.`;
+  });
+
+  protected isMissing(field: 'category' | 'price' | 'products'): boolean {
+    return this.touched() && this.missingFields().includes(field);
+  }
+
+  protected fieldClass(missing: boolean): string {
+    return missing ? 'border-red-500 bg-red-50/40' : 'border-black/10';
+  }
+
   protected readonly isFormValid = computed(() => {
     return this.selectedCategoryId() !== '' && this.productPrice() > 0;
   });
@@ -318,6 +351,7 @@ export class MenuItemsComponent {
   }
 
   protected openAddProductsModal(): void {
+    this.touched.set(false);
     this.mode.set('create');
     this.selectedProductIds.set([]);
     this.selectedCategoryId.set('');
@@ -330,6 +364,7 @@ export class MenuItemsComponent {
   }
 
   protected openEdit(menuItem: MenuItem): void {
+    this.touched.set(false);
     this.mode.set('edit');
     this.editingItemId.set(menuItem.id);
     this.selectedCategoryId.set(menuItem.category.id.toString());
@@ -360,6 +395,7 @@ export class MenuItemsComponent {
   }
 
   protected toggleProductSelection(productId: string): void {
+    this.touched.set(true);
     this.selectedProductIds.update((ids) => {
       if (ids.includes(productId)) {
         return ids.filter((id) => id !== productId);
@@ -374,17 +410,20 @@ export class MenuItemsComponent {
   }
 
   protected updateCategory(event: Event): void {
+    this.touched.set(true);
     const target = event.target as HTMLSelectElement;
     this.selectedCategoryId.set(target.value);
   }
 
   protected updatePrice(event: Event): void {
+    this.touched.set(true);
     const target = event.target as HTMLInputElement;
     const value = parseFloat(target.value);
     this.productPrice.set(isNaN(value) ? 0 : value);
   }
 
   protected updateVariantGroup(event: Event): void {
+    this.touched.set(true);
     const target = event.target as HTMLInputElement;
     this.productVariantGroup.set(target.value);
   }
