@@ -1,0 +1,170 @@
+<app-modal
+  [isOpen]="isOpen()"
+  title="Importar menú desde CSV"
+  maxWidth="max-w-4xl"
+  [confirmText]="confirmText()"
+  loadingText="Importando..."
+  [loading]="saving()"
+  [confirmDisabled]="!finished() && !canImport()"
+  [closeOnOverlayClick]="!saving()"
+  ariaLabelId="menu-csv-import-title"
+  (close)="close()"
+  (cancel)="close()"
+  (confirm)="confirm()"
+>
+  <div class="space-y-4 text-sm">
+    @if (!finished()) {
+      <p class="text-neutral-600">
+        Sube el menú de esta sucursal. Primero ves lo que va a cambiar y no se guarda nada hasta que
+        confirmes. Los productos que no vengan en el archivo se quedan como están; para quitar uno
+        del menú, pon <strong>no</strong> en la columna activo.
+      </p>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <input
+          #fileInput
+          type="file"
+          accept=".csv,text/csv"
+          class="hidden"
+          (change)="onFileSelected($event)"
+          aria-label="Seleccionar el archivo CSV del menú"
+        />
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="fileInput.click()"
+          [disabled]="checking() || saving()"
+        >
+          {{ file() ? 'Elegir otro archivo' : 'Elegir archivo' }}
+        </button>
+        @if (file(); as selected) {
+          <span class="min-w-0 truncate text-neutral-700">{{ selected.name }}</span>
+        }
+        @if (checking()) {
+          <span class="text-neutral-500" role="status">Revisando el archivo...</span>
+        }
+      </div>
+    }
+
+    @if (preview(); as result) {
+      @if (!finished()) {
+        @if (errors().length) {
+          <section
+            class="rounded-xl border border-red-200 bg-red-50 p-3 text-red-800"
+            aria-labelledby="csv-errors-title"
+          >
+            <h3 id="csv-errors-title" class="font-medium">
+              El archivo tiene {{ errors().length }}
+              {{ errors().length === 1 ? 'error' : 'errores' }}. Corrígelos y vuelve a subirlo; no
+              se guardó nada.
+            </h3>
+            <ul class="mt-2 max-h-48 space-y-1 overflow-y-auto">
+              @for (issue of errors(); track $index) {
+                <li>
+                  <span class="font-medium"
+                    >{{ issueLocation(issue) }} · {{ columnLabel(issue.column) }}:</span
+                  >
+                  {{ issue.message }}
+                </li>
+              }
+            </ul>
+          </section>
+        } @else {
+          <p
+            class="rounded-xl border border-green-200 bg-green-50 p-3 text-green-800"
+            role="status"
+          >
+            {{ summaryText(result.summary) }}
+          </p>
+          @if (result.categoriesToCreate.length) {
+            <p class="text-neutral-700">
+              <span class="font-medium">Categorías nuevas:</span>
+              {{ result.categoriesToCreate.join(', ') }}
+            </p>
+          }
+        }
+
+        @if (warnings().length) {
+          <section
+            class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900"
+            aria-labelledby="csv-warnings-title"
+          >
+            <h3 id="csv-warnings-title" class="font-medium">Revisa antes de importar</h3>
+            <ul class="mt-2 max-h-40 space-y-1 overflow-y-auto">
+              @for (issue of warnings(); track $index) {
+                <li>
+                  <span class="font-medium">{{ issueLocation(issue) }}:</span> {{ issue.message }}
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (!errors().length && result.rows.length) {
+          <div class="max-h-72 overflow-auto rounded-xl border border-black/10">
+            <table class="w-full text-left">
+              <thead class="sticky top-0 bg-neutral-50 text-neutral-600">
+                <tr>
+                  <th class="px-3 py-2 font-medium">Fila</th>
+                  <th class="px-3 py-2 font-medium">Producto</th>
+                  <th class="px-3 py-2 font-medium">Categoría</th>
+                  <th class="px-3 py-2 text-right font-medium">Precio</th>
+                  <th class="px-3 py-2 font-medium">Qué pasa</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of result.rows; track row.row) {
+                  <tr>
+                    <td class="px-3 py-2 text-neutral-500">{{ row.row }}</td>
+                    <td class="px-3 py-2">
+                      {{ row.name }}
+                      @if (row.photo === 'copy') {
+                        <span class="text-xs text-neutral-500">· con foto</span>
+                      }
+                    </td>
+                    <td class="px-3 py-2">{{ row.category }}</td>
+                    <td class="px-3 py-2 text-right">
+                      {{ row.price | currency: 'MXN' : 'symbol-narrow' }}
+                    </td>
+                    <td class="px-3 py-2">
+                      <span
+                        class="badge inline-block rounded-full border px-2 py-0.5 text-xs whitespace-nowrap"
+                        [class]="actionClass(row.action)"
+                        >{{ actionLabel(row.action) }}</span
+                      >
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+
+    @if (photoErrors().length) {
+      <section
+        class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900"
+        aria-labelledby="csv-photos-title"
+      >
+        <h3 id="csv-photos-title" class="font-medium">
+          El menú se guardó, pero {{ photoErrors().length }}
+          {{
+            photoErrors().length === 1 ? 'foto no se pudo copiar' : 'fotos no se pudieron copiar'
+          }}.
+        </h3>
+        <p class="mt-1">
+          Esos productos quedaron sin foto. Revisa que la URL abra la imagen y súbela desde
+          Productos.
+        </p>
+        <ul class="mt-2 max-h-40 space-y-1 overflow-y-auto">
+          @for (issue of photoErrors(); track $index) {
+            <li>
+              <span class="font-medium">{{ issueLocation(issue) }}:</span> {{ issue.message }}
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+</app-modal>

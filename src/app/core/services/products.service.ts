@@ -23,13 +23,6 @@ export class ProductsService {
     return this.http.post<ProductResponse>(`${this.apiUrl}/products/${restaurantId}`, newProduct);
   }
 
-  bulkCreateProducts(restaurantId: string, file: File): Observable<void> {
-    const form = new FormData();
-    form.append('file', file);
-
-    return this.http.post<void>(`${this.apiUrl}/products/bulk-upload/${restaurantId}`, form);
-  }
-
   updateProduct(
     restaurantId: string,
     productId: string,

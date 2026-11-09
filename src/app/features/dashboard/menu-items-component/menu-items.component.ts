@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { combineLatest } from 'rxjs';
+import { combineLatest, finalize } from 'rxjs';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { IconsService } from '../../../core/services/icons.service';
 import { MenusService } from '../../../core/services/menus.service';
@@ -24,6 +24,10 @@ import { createSearchState } from '../../../shared/utils/search.util';
 import { extractMenuIdFromSlug } from '../../../shared/utils/slug-genarator.util';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { MenuItemForm } from '../../../core/services/forms/forms.interfaces';
+import { ToastrService } from 'ngx-toastr';
+import { downloadTemplate } from '../../../shared/utils/download-template.util';
+import { MenuCsvImportComponent } from './menu-csv-import/menu-csv-import.component';
+import { downloadBlob, menuCsvFileName } from './menu-csv-import/menu-csv.util';
 
 @Component({
   selector: 'app-menu-items',
@@ -34,6 +38,7 @@ import { MenuItemForm } from '../../../core/services/forms/forms.interfaces';
     PaginationComponent,
     ModalComponent,
     LucideAngularModule,
+    MenuCsvImportComponent,
   ],
   templateUrl: './menu-items.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +51,7 @@ export class MenuItemsComponent {
   protected readonly iconsService = inject(IconsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   protected readonly menuId = signal<string | null>(null);
   protected readonly menu = signal<Menu | null>(null);
@@ -59,6 +65,8 @@ export class MenuItemsComponent {
   protected readonly target = signal<MenuItem | null>(null);
   protected readonly filters = signal<{ isActive?: boolean }>({});
   protected readonly mode = signal<'create' | 'edit' | null>(null);
+  protected readonly showCsvImport = signal(false);
+  protected readonly exporting = signal(false);
 
   protected readonly form = signal<MenuItemForm>({
     product: [],
@@ -282,6 +290,29 @@ export class MenuItemsComponent {
     }
 
     this.filters.update((f) => ({ ...f, isActive }));
+    this.paginationState.resetToFirstPage();
+    this.fetch();
+  }
+
+  protected downloadCsvTemplate(): void {
+    downloadTemplate('menu-template.csv');
+  }
+
+  protected exportCsv(): void {
+    const mid = this.menuId();
+    if (!mid) return;
+
+    this.exporting.set(true);
+    this.menusService
+      .exportMenuCsv(mid)
+      .pipe(finalize(() => this.exporting.set(false)))
+      .subscribe({
+        next: (blob) => downloadBlob(blob, menuCsvFileName(this.menuName())),
+        error: () => this.toastr.error('No se pudo exportar el menú'),
+      });
+  }
+
+  protected onCsvImported(): void {
     this.paginationState.resetToFirstPage();
     this.fetch();
   }

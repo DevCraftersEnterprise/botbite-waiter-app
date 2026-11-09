@@ -12,6 +12,7 @@ import {
   CreateMenuItemDto,
   UpdateMenuItemDto,
 } from './types/menus.types';
+import { MenuImportPreview, MenuImportResult } from './types/menu-csv.types';
 import { map, Observable, tap } from 'rxjs';
 
 @Injectable({
@@ -97,6 +98,36 @@ export class MenusService {
       .pipe(map((response) => response.menu));
   }
 
+  //#endregion
+
+  //#region Menu CSV
+  /** Qué haría la importación, sin guardar nada. */
+  previewMenuCsv(menuId: string, file: File): Observable<MenuImportPreview> {
+    return this.http.post<MenuImportPreview>(
+      `${this.apiUrl}/menus/menu/${menuId}/import/preview`,
+      this.csvForm(file)
+    );
+  }
+
+  /** Guarda el menú del archivo. Con un error responde 400 y no guarda nada. */
+  importMenuCsv(menuId: string, file: File): Observable<MenuImportResult> {
+    return this.http.post<MenuImportResult>(
+      `${this.apiUrl}/menus/menu/${menuId}/import`,
+      this.csvForm(file)
+    );
+  }
+
+  exportMenuCsv(menuId: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/menus/menu/${menuId}/export`, {
+      responseType: 'blob',
+    });
+  }
+
+  private csvForm(file: File): FormData {
+    const form = new FormData();
+    form.append('file', file);
+    return form;
+  }
   //#endregion
 
   //#region Menu Items
