@@ -40,6 +40,18 @@
               </span>
             }
           </h2>
+          <button
+            type="button"
+            class="btn-small"
+            (click)="toggleOrder()"
+            [attr.aria-label]="
+              order() === 'oldest'
+                ? 'Mostrar primero las más nuevas'
+                : 'Mostrar primero las más viejas'
+            "
+          >
+            {{ order() === 'oldest' ? 'Más viejas arriba' : 'Más nuevas arriba' }}
+          </button>
         </div>
 
         @if (visibleActive().length === 0) {

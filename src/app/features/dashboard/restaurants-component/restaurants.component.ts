@@ -3,6 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { LucideAngularModule } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, EMPTY, finalize } from 'rxjs';
+import {
+  FieldErrors,
+  formErrorSummary,
+  toFormErrors,
+} from '../../../shared/utils/api-errors.util';
 import { IconsService } from '../../../core/services/icons.service';
 import { OrgService } from '../../../core/services/org.service';
 import { RestaurantsService } from '../../../core/services/restaurants.service';
@@ -41,6 +46,9 @@ export class RestaurantsComponent {
   readonly target = signal<Restaurant | null>(null);
   readonly confirming = signal(false);
   readonly filters = signal<{ isActive?: boolean }>({});
+
+  /** Lo que rechazó la API, junto a su campo. */
+  readonly fieldErrors = signal<FieldErrors>({});
 
   readonly form = signal<RestaurantForm>({
     name: '',
@@ -161,6 +169,7 @@ export class RestaurantsComponent {
 
   closeModal(): void {
     this.mode.set(null);
+    this.fieldErrors.set({});
     this.form.set({ name: '', isActive: true });
   }
 
@@ -170,6 +179,7 @@ export class RestaurantsComponent {
     if (!formValue.name.trim()) return;
 
     this.saving.set(true);
+    this.fieldErrors.set({});
 
     const restaurantData: Partial<Restaurant> = {
       name: formValue.name.trim(),
@@ -186,7 +196,9 @@ export class RestaurantsComponent {
       .pipe(
         catchError((error) => {
           console.error('Error saving restaurant:', error);
-          this.toastrService.error('No se pudo guardar el restaurante');
+          const errors = toFormErrors(error, ['name', 'walletPct']);
+          this.fieldErrors.set(errors.fields);
+          this.toastrService.error(formErrorSummary(errors));
           return EMPTY;
         }),
         finalize(() => this.saving.set(false))
@@ -234,11 +246,26 @@ export class RestaurantsComponent {
   updateFormName(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.form.update((form) => ({ ...form, name: input.value }));
+    this.clearFieldError('name');
   }
 
   updateFormWalletPct(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.form.update((form) => ({ ...form, walletPct: Number(input.value) }));
+    this.clearFieldError('walletPct');
+  }
+
+  fieldClass(field: string): string {
+    return this.fieldErrors()[field] ? 'border-red-500 bg-red-50/40' : 'border-black/10';
+  }
+
+  private clearFieldError(field: string): void {
+    if (!this.fieldErrors()[field]) return;
+    this.fieldErrors.update((errors) => {
+      const next = { ...errors };
+      delete next[field];
+      return next;
+    });
   }
 
   updateFormActive(event: Event): void {

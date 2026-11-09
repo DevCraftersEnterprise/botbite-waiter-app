@@ -107,8 +107,8 @@
         <tr>
           <th class="w-1/6 px-4 py-3 text-left font-medium">Nombre</th>
           <th class="w-1/6 px-4 py-3 text-left font-medium">Dirección</th>
-          <th class="w-32 px-4 py-3 text-left font-medium">Tel. Asistente</th>
-          <th class="w-32 px-4 py-3 text-left font-medium">Tel. Caja</th>
+          <th class="w-32 px-4 py-3 text-left font-medium">WhatsApp del mesero</th>
+          <th class="w-32 px-4 py-3 text-left font-medium">WhatsApp de caja</th>
           <th class="w-28 px-4 py-3 text-left font-medium">Estado</th>
           <th class="px-4 py-3 text-right font-medium">Acciones</th>
         </tr>
@@ -154,6 +154,14 @@
                   {{ branch.isActive ? 'Activa' : 'Inactiva' }}
                 </span>
               </div>
+              @if (branch.verifyLocation === false) {
+                <span
+                  class="mt-1 inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-900"
+                  title="El bot no revisa que el comensal esté en el restaurante"
+                >
+                  Ubicación sin verificar
+                </span>
+              }
             </td>
             <td class="px-4 py-3">
               <div class="flex flex-wrap items-center justify-end gap-2">
@@ -284,12 +292,16 @@
         <input
           id="bname"
           type="text"
-          class="w-full rounded-xl border border-black/10 px-3 py-2"
+          class="w-full rounded-xl border px-3 py-2"
+          [class]="fieldClass('name')"
           [value]="form().name"
           (input)="updateForm('name', $event)"
           required
           maxlength="120"
         />
+        @if (fieldErrors()['name']; as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
       </div>
 
       <div class="md:col-span-2">
@@ -297,44 +309,66 @@
         <input
           id="baddress"
           type="text"
-          class="w-full rounded-xl border border-black/10 px-3 py-2"
+          class="w-full rounded-xl border px-3 py-2"
+          [class]="fieldClass('address')"
           [value]="form().address"
           (input)="updateForm('address', $event)"
           required
           maxlength="220"
         />
+        @if (fieldErrors()['address']; as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
       </div>
       <div class="md:col-span-2">
-        <label for="bassistant" class="text-sm font-medium">Tel. Asistente</label>
+        <label for="bassistant" class="text-sm font-medium">WhatsApp del mesero</label>
         <input
           id="bassistant"
-          type="text"
-          class="w-full rounded-xl border border-black/10 px-3 py-2"
+          type="tel"
+          class="w-full rounded-xl border px-3 py-2"
+          [class]="fieldClass('phoneNumberAssistant')"
+          placeholder="+5216441234567"
           [value]="form().phoneNumberAssistant"
           (input)="updateForm('phoneNumberAssistant', $event)"
           maxlength="30"
         />
+        @if (fieldErrors()['phoneNumberAssistant']; as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+        <p class="text-xs text-neutral-500">
+          El número al que escriben los clientes, con + y lada. No es el phone number ID de Meta.
+        </p>
       </div>
       <div class="md:col-span-2">
-        <label for="breception" class="text-sm font-medium">Tel. Caja</label>
+        <label for="breception" class="text-sm font-medium">WhatsApp de caja</label>
         <input
           id="breception"
-          type="text"
-          class="w-full rounded-xl border border-black/10 px-3 py-2"
+          type="tel"
+          class="w-full rounded-xl border px-3 py-2"
+          [class]="fieldClass('phoneNumberReception')"
+          placeholder="+5216441234567"
           [value]="form().phoneNumberReception"
           (input)="updateForm('phoneNumberReception', $event)"
           maxlength="30"
         />
+        @if (fieldErrors()['phoneNumberReception']; as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+        <p class="text-xs text-neutral-500">Donde llegan las comandas y los avisos, con + y lada.</p>
       </div>
       <div class="md:col-span-2">
         <label for="surveyUrl" class="text-sm font-medium">URL Encuesta</label>
         <input
           id="surveyUrl"
           type="text"
-          class="w-full rounded-xl border border-black/10 px-3 py-2"
+          class="w-full rounded-xl border px-3 py-2"
+          [class]="fieldClass('surveyUrl')"
           [value]="form().surveyUrl"
           (input)="updateForm('surveyUrl', $event)"
         />
+        @if (fieldErrors()['surveyUrl']; as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
       </div>
 
       @if (!isFormValid() && (form().name || form().address)) {
