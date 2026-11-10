@@ -18,6 +18,7 @@ import { OrgService } from '../../../core/services/org.service';
 import { Branch, StaffMember } from '../../../core/services/types/branches.types';
 import { Mode } from '../../../core/services/types/common.types';
 import { BotConfigModalComponent } from './bot-config-modal/bot-config-modal.component';
+import { OrderingModalComponent } from './ordering-modal/ordering-modal.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state';
 import { ModalComponent } from '../../../shared/components/modal/modal';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination';
@@ -50,6 +51,7 @@ const BRANCH_FIELDS = [
     EmptyStateComponent,
     LucideAngularModule,
     BotConfigModalComponent,
+    OrderingModalComponent,
   ],
   templateUrl: './branches.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -104,6 +106,9 @@ export class BranchesComponent {
 
   /** Sucursal abierta en "Mesero digital". */
   readonly botBranch = signal<Branch | null>(null);
+
+  /** Sucursal abierta en "Pedidos" (recoger y domicilio). */
+  readonly orderingBranch = signal<Branch | null>(null);
 
   // Personal de la sucursal (cajeros y meseros)
   readonly staffBranch = signal<Branch | null>(null);

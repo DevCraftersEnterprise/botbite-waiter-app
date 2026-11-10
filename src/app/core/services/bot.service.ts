@@ -4,6 +4,7 @@ import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { OrgService } from './org.service';
 import { BotConfig, BotKey, CreatedBotKey, UpdateBotConfig } from './types/bot.types';
+import { Ordering, UpdateOrdering } from './types/ordering.types';
 
 @Injectable({
   providedIn: 'root',
@@ -23,6 +24,27 @@ export class BotService {
     return this.http
       .patch<{ config: BotConfig }>(`${this.branchUrl(branchId)}/bot-config`, changes)
       .pipe(map((response) => response.config));
+  }
+
+  /** null: la sucursal nunca configuró pedidos. */
+  getOrdering(branchId: string): Observable<Ordering | null> {
+    return this.http
+      .get<{ ordering: Ordering | null }>(`${this.branchUrl(branchId)}/ordering`)
+      .pipe(map((response) => response.ordering));
+  }
+
+  updateOrdering(branchId: string, changes: UpdateOrdering): Observable<Ordering> {
+    return this.http
+      .patch<{ ordering: Ordering }>(`${this.branchUrl(branchId)}/ordering`, changes)
+      .pipe(map((response) => response.ordering));
+  }
+
+  /** "Recibiendo pedidos": también lo usa caja. */
+  setAccepting(branchId: string, accepting: boolean): Observable<{ accepting: boolean }> {
+    return this.http.patch<{ accepting: boolean }>(
+      `${this.branchUrl(branchId)}/ordering/accepting`,
+      { accepting }
+    );
   }
 
   listKeys(branchId: string): Observable<BotKey[]> {

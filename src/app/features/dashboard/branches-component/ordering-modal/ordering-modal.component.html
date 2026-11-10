@@ -1,0 +1,539 @@
+<app-modal
+  [isOpen]="!!branch()"
+  [title]="'Pedidos · ' + (branch()?.name ?? '')"
+  [maxWidth]="'max-w-3xl'"
+  [showActions]="true"
+  [loading]="saving()"
+  [confirmDisabled]="!canSave()"
+  confirmText="Guardar"
+  (close)="close()"
+  (cancel)="close()"
+  (confirm)="save()"
+>
+  @if (form(); as f) {
+    <form (submit)="$event.preventDefault()" class="max-h-[65vh] space-y-6 overflow-y-auto pr-1">
+      <p class="text-sm text-neutral-600">
+        Un número de WhatsApp aparte del mesero, para pedidos de recoger y a domicilio que el
+        cliente paga por adelantado.
+      </p>
+
+      @if (!f.enabled) {
+        <p
+          class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          role="status"
+        >
+          @if (isAdmin()) {
+            Los pedidos están apagados en esta sucursal. Captura el número y actívalos cuando el bot
+            esté listo.
+          } @else {
+            Los pedidos están apagados en esta sucursal: los activa BotBite. Puedes dejar listos los
+            ajustes.
+          }
+        </p>
+      }
+
+      <section class="space-y-3">
+        <h3 class="text-sm font-semibold">Número de pedidos</h3>
+        @if (isAdmin()) {
+          <div class="flex items-center gap-2">
+            <input
+              id="orderingEnabled"
+              type="checkbox"
+              class="rounded"
+              [checked]="f.enabled"
+              (change)="updateFlag('enabled', $event)"
+            />
+            <label for="orderingEnabled" class="text-sm">Pedidos activos en esta sucursal</label>
+          </div>
+          <div class="grid gap-3 md:grid-cols-3">
+            <div class="space-y-1">
+              <label for="orderingPhoneNumberId" class="text-sm font-medium">
+                Phone number ID de Meta
+              </label>
+              <input
+                id="orderingPhoneNumberId"
+                class="input"
+                inputmode="numeric"
+                [class.border-red-500]="!!errorOf('phoneNumberId')"
+                [value]="f.phoneNumberId"
+                (input)="updateText('phoneNumberId', $event)"
+              />
+              @if (errorOf('phoneNumberId'); as message) {
+                <p class="text-xs text-red-600">{{ message }}</p>
+              }
+            </div>
+            <div class="space-y-1">
+              <label for="orderingPhone" class="text-sm font-medium">Teléfono</label>
+              <input
+                id="orderingPhone"
+                class="input"
+                inputmode="tel"
+                placeholder="5216441110000"
+                [class.border-red-500]="!!errorOf('phoneNumber')"
+                [value]="f.phoneNumber"
+                (input)="updateText('phoneNumber', $event)"
+              />
+              @if (errorOf('phoneNumber'); as message) {
+                <p class="text-xs text-red-600">{{ message }}</p>
+              }
+            </div>
+            <div class="space-y-1">
+              <label for="orderingCommission" class="text-sm font-medium">
+                Comisión de BotBite (%)
+              </label>
+              <input
+                id="orderingCommission"
+                class="input"
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                [class.border-red-500]="!!errorOf('commissionPct')"
+                [value]="f.commissionPct"
+                (input)="updateNumber('commissionPct', $event)"
+              />
+              @if (errorOf('commissionPct'); as message) {
+                <p class="text-xs text-red-600">{{ message }}</p>
+              }
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500">
+            El phone number ID está en WhatsApp Manager › Números de teléfono, y debe ser distinto
+            al del mesero. El teléfono va como lo muestra WhatsApp, con lada y sin espacios (en
+            celulares de México, 521…). La comisión es sobre el total, envío incluido.
+          </p>
+        } @else {
+          <dl class="grid gap-2 text-sm md:grid-cols-2">
+            <div>
+              <dt class="text-neutral-500">Teléfono</dt>
+              <dd>{{ f.phoneNumber || 'Sin capturar' }}</dd>
+            </div>
+            <div>
+              <dt class="text-neutral-500">Comisión de BotBite</dt>
+              <dd>{{ f.commissionPct }} % sobre el total, envío incluido</dd>
+            </div>
+          </dl>
+          <p class="text-xs text-neutral-500">El número y la comisión los administra BotBite.</p>
+        }
+      </section>
+
+      <section class="space-y-2">
+        <h3 class="text-sm font-semibold">Recibiendo pedidos</h3>
+        <div class="flex items-center gap-2">
+          <input
+            id="orderingAccepting"
+            type="checkbox"
+            class="rounded"
+            [checked]="f.accepting"
+            (change)="updateFlag('accepting', $event)"
+          />
+          <label for="orderingAccepting" class="text-sm">Recibir pedidos nuevos</label>
+        </div>
+        <p class="text-xs text-neutral-500">
+          Apagarlo es como escribir <em>pausar</em> en el WhatsApp de caja: no entran pedidos nuevos
+          y los que ya van en curso siguen.
+        </p>
+      </section>
+
+      <section class="space-y-2">
+        <h3 class="text-sm font-semibold">Tipos de pedido</h3>
+        <div class="flex flex-wrap gap-4">
+          <div class="flex items-center gap-2">
+            <input
+              id="orderingPickup"
+              type="checkbox"
+              class="rounded"
+              [checked]="f.pickup"
+              (change)="updateFlag('pickup', $event)"
+            />
+            <label for="orderingPickup" class="text-sm">Para recoger</label>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              id="orderingDelivery"
+              type="checkbox"
+              class="rounded"
+              [checked]="f.delivery"
+              (change)="updateFlag('delivery', $event)"
+            />
+            <label for="orderingDelivery" class="text-sm">A domicilio</label>
+          </div>
+        </div>
+        @if (errorOf('types'); as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+      </section>
+
+      @if (f.delivery) {
+        <section class="space-y-3">
+          <h3 class="text-sm font-semibold">Envío</h3>
+          <div class="grid gap-3 md:grid-cols-4">
+            <div class="space-y-1">
+              <label for="orderingBaseFee" class="text-sm font-medium">Costo base ($)</label>
+              <input
+                id="orderingBaseFee"
+                class="input"
+                type="number"
+                min="0"
+                [value]="f.baseFee"
+                (input)="updateNumber('baseFee', $event)"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="orderingIncludedKm" class="text-sm font-medium">Km incluidos</label>
+              <input
+                id="orderingIncludedKm"
+                class="input"
+                type="number"
+                min="0"
+                step="0.5"
+                [value]="f.includedKm"
+                (input)="updateNumber('includedKm', $event)"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="orderingExtra" class="text-sm font-medium">Extra por 100 m ($)</label>
+              <input
+                id="orderingExtra"
+                class="input"
+                type="number"
+                min="0"
+                step="0.5"
+                [value]="f.extraPer100m"
+                (input)="updateNumber('extraPer100m', $event)"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="orderingMaxKm" class="text-sm font-medium">Distancia máxima (km)</label>
+              <input
+                id="orderingMaxKm"
+                class="input"
+                inputmode="decimal"
+                placeholder="Sin límite"
+                [value]="f.maxKm"
+                (input)="updateText('maxKm', $event)"
+              />
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500">
+            Hasta los km incluidos se cobra el costo base; después, el extra por cada 100 m. La
+            distancia es en línea recta desde la sucursal, así que necesita sus coordenadas (en el
+            Mesero digital).
+          </p>
+          @if (errorOf('delivery'); as message) {
+            <p class="text-xs text-red-600">{{ message }}</p>
+          }
+        </section>
+
+        <section class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-semibold">Zonas sin entrega</h3>
+            <button type="button" class="btn-small" (click)="addZone()">Agregar zona</button>
+          </div>
+          @for (zone of f.zones; track $index; let i = $index) {
+            <div class="space-y-3 rounded-xl border border-black/10 p-3">
+              <div class="grid gap-3 md:grid-cols-3">
+                <div class="space-y-1">
+                  <label [for]="'zoneName' + i" class="text-sm font-medium">Nombre</label>
+                  <input
+                    [id]="'zoneName' + i"
+                    class="input"
+                    placeholder="Colonia X (de noche)"
+                    [value]="zone.name"
+                    (input)="updateZoneText(i, 'name', $event)"
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label [for]="'zoneCoordinates' + i" class="text-sm font-medium">Centro</label>
+                  <input
+                    [id]="'zoneCoordinates' + i"
+                    class="input"
+                    inputmode="decimal"
+                    placeholder="27.52, -109.94"
+                    [value]="zone.coordinates"
+                    (input)="updateZoneText(i, 'coordinates', $event)"
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label [for]="'zoneRadius' + i" class="text-sm font-medium">Radio (m)</label>
+                  <input
+                    [id]="'zoneRadius' + i"
+                    class="input"
+                    type="number"
+                    min="10"
+                    [value]="zone.radiusMeters"
+                    (input)="updateZoneRadius(i, $event)"
+                  />
+                </div>
+              </div>
+              <div class="flex flex-wrap items-end gap-3">
+                <div class="space-y-1">
+                  <span class="text-sm font-medium">Días</span>
+                  <div
+                    class="flex gap-1"
+                    role="group"
+                    [attr.aria-label]="'Días de la zona ' + (i + 1)"
+                  >
+                    @for (day of days; track day.value) {
+                      <button
+                        type="button"
+                        class="h-8 min-w-8 rounded-lg border px-1 text-xs"
+                        [class]="
+                          zone.days.includes(day.value)
+                            ? 'border-black bg-black text-white'
+                            : 'border-black/20 bg-white'
+                        "
+                        [attr.aria-pressed]="zone.days.includes(day.value)"
+                        [attr.aria-label]="day.name"
+                        (click)="toggleZoneDay(i, day.value)"
+                      >
+                        {{ day.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <label [for]="'zoneFrom' + i" class="text-sm font-medium">Desde</label>
+                  <input
+                    [id]="'zoneFrom' + i"
+                    class="input"
+                    type="time"
+                    [value]="zone.from"
+                    (input)="updateZoneText(i, 'from', $event)"
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label [for]="'zoneTo' + i" class="text-sm font-medium">Hasta</label>
+                  <input
+                    [id]="'zoneTo' + i"
+                    class="input"
+                    type="time"
+                    [value]="zone.to"
+                    (input)="updateZoneText(i, 'to', $event)"
+                  />
+                </div>
+                <div class="ml-auto flex gap-2">
+                  @if (mapUrl(zone); as url) {
+                    <a class="btn-small" [href]="url" target="_blank" rel="noopener">Ver en mapa</a>
+                  }
+                  <button type="button" class="btn-small-danger" (click)="removeZone(i)">
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-sm text-neutral-500">Se entrega en toda el área de envío.</p>
+          }
+          <p class="text-xs text-neutral-500">
+            Sin días marcados aplica todos los días, y sin horario, todo el día. El horario puede
+            cruzar la medianoche (de 21:00 a 06:00).
+          </p>
+          @if (errorOf('noDeliveryZones'); as message) {
+            <p class="text-xs text-red-600">{{ message }}</p>
+          }
+        </section>
+      }
+
+      <section class="space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-sm font-semibold">Horario de pedidos</h3>
+          <button type="button" class="btn-small" (click)="addHours()">Agregar horario</button>
+        </div>
+        @for (window of f.hours; track $index; let i = $index) {
+          <div class="flex flex-wrap items-end gap-3 rounded-xl border border-black/10 p-3">
+            <div class="space-y-1">
+              <span class="text-sm font-medium">Días</span>
+              <div
+                class="flex gap-1"
+                role="group"
+                [attr.aria-label]="'Días del horario ' + (i + 1)"
+              >
+                @for (day of days; track day.value) {
+                  <button
+                    type="button"
+                    class="h-8 min-w-8 rounded-lg border px-1 text-xs"
+                    [class]="
+                      window.days.includes(day.value)
+                        ? 'border-black bg-black text-white'
+                        : 'border-black/20 bg-white'
+                    "
+                    [attr.aria-pressed]="window.days.includes(day.value)"
+                    [attr.aria-label]="day.name"
+                    (click)="toggleHoursDay(i, day.value)"
+                  >
+                    {{ day.label }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="space-y-1">
+              <label [for]="'hoursOpens' + i" class="text-sm font-medium">Abre</label>
+              <input
+                [id]="'hoursOpens' + i"
+                class="input"
+                type="time"
+                [value]="window.opens"
+                (input)="updateHoursTime(i, 'opens', $event)"
+              />
+            </div>
+            <div class="space-y-1">
+              <label [for]="'hoursCloses' + i" class="text-sm font-medium">Cierra</label>
+              <input
+                [id]="'hoursCloses' + i"
+                class="input"
+                type="time"
+                [value]="window.closes"
+                (input)="updateHoursTime(i, 'closes', $event)"
+              />
+            </div>
+            <button type="button" class="btn-small-danger ml-auto" (click)="removeHours(i)">
+              Quitar
+            </button>
+          </div>
+        } @empty {
+          <p class="text-sm text-amber-700">
+            Sin horario, el bot no sabe cuándo tomar pedidos para ahora.
+          </p>
+        }
+        <p class="text-xs text-neutral-500">
+          Es aparte de la hora de cierre del mesero. Agrega varios horarios para cortar a mediodía o
+          para días distintos; si cierra después de medianoche, pon la hora del día siguiente.
+        </p>
+        @if (errorOf('hours'); as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+      </section>
+
+      <section class="space-y-3">
+        <h3 class="text-sm font-semibold">Pedidos programados</h3>
+        <div class="flex items-center gap-2">
+          <input
+            id="schedulingEnabled"
+            type="checkbox"
+            class="rounded"
+            [checked]="f.scheduling.enabled"
+            (change)="updateScheduling('enabled', $event)"
+          />
+          <label for="schedulingEnabled" class="text-sm">
+            Permitir pedir para más tarde u otro día
+          </label>
+        </div>
+        @if (f.scheduling.enabled) {
+          <div class="grid gap-3 md:grid-cols-3">
+            <div class="space-y-1">
+              <label for="schedulingMaxDays" class="text-sm font-medium">Días hacia adelante</label>
+              <input
+                id="schedulingMaxDays"
+                class="input"
+                type="number"
+                min="0"
+                max="7"
+                [value]="f.scheduling.maxDays"
+                (input)="updateScheduling('maxDays', $event)"
+              />
+              <p class="text-xs text-neutral-500">1 = hoy y mañana.</p>
+            </div>
+            <div class="space-y-1">
+              <label for="schedulingLead" class="text-sm font-medium"
+                >Anticipación mínima (min)</label
+              >
+              <input
+                id="schedulingLead"
+                class="input"
+                type="number"
+                min="0"
+                [value]="f.scheduling.minLeadMinutes"
+                (input)="updateScheduling('minLeadMinutes', $event)"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="schedulingStep" class="text-sm font-medium">Horas cada (min)</label>
+              <input
+                id="schedulingStep"
+                class="input"
+                type="number"
+                min="5"
+                [value]="f.scheduling.stepMinutes"
+                (input)="updateScheduling('stepMinutes', $event)"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="schedulingReminder" class="text-sm font-medium">
+                Recordar a caja antes (min)
+              </label>
+              <input
+                id="schedulingReminder"
+                class="input"
+                type="number"
+                min="0"
+                [value]="f.scheduling.reminderMinutes"
+                (input)="updateScheduling('reminderMinutes', $event)"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="schedulingCancel" class="text-sm font-medium">
+                Cancelar hasta (min antes)
+              </label>
+              <input
+                id="schedulingCancel"
+                class="input"
+                type="number"
+                min="0"
+                [value]="f.scheduling.cancelUntilMinutes"
+                (input)="updateScheduling('cancelUntilMinutes', $event)"
+              />
+            </div>
+          </div>
+        }
+        @if (errorOf('scheduling'); as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+      </section>
+
+      <section class="space-y-3">
+        <h3 class="text-sm font-semibold">Tiempos</h3>
+        <div class="grid gap-3 md:grid-cols-3">
+          <div class="space-y-1">
+            <label for="orderingPrep" class="text-sm font-medium">Preparación (min)</label>
+            <input
+              id="orderingPrep"
+              class="input"
+              type="number"
+              min="0"
+              [value]="f.prepMinutes"
+              (input)="updateNumber('prepMinutes', $event)"
+            />
+            @if (errorOf('prepMinutes'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
+          </div>
+          <div class="space-y-1">
+            <label for="orderingLink" class="text-sm font-medium">El link de pago vale (min)</label>
+            <input
+              id="orderingLink"
+              class="input"
+              type="number"
+              min="5"
+              [value]="f.paymentLinkMinutes"
+              (input)="updateNumber('paymentLinkMinutes', $event)"
+            />
+            @if (errorOf('paymentLinkMinutes'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
+          </div>
+        </div>
+      </section>
+
+      @if (problems().length) {
+        <ul class="space-y-1 rounded-lg border border-red-200 bg-red-50 px-3 py-2" role="alert">
+          @for (problem of problems(); track problem) {
+            <li class="text-sm text-red-700">{{ problem }}</li>
+          }
+        </ul>
+      }
+    </form>
+  } @else if (loading()) {
+    <p class="text-sm text-neutral-500">Cargando...</p>
+  }
+</app-modal>
