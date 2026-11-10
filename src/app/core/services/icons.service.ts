@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Bot,
   Banknote,
+  Bike,
   CirclePlus,
   Contact,
   CreditCard,
@@ -69,6 +70,7 @@ export class IconsService {
   readonly timer = Timer;
   readonly message = MessagesSquare;
   readonly assistant = Bot;
+  readonly ordering = Bike;
   readonly hand = Hand;
   readonly addUser = UserPlus;
   readonly search = Search;

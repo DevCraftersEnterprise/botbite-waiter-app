@@ -35,6 +35,43 @@ const KNOWN: { pattern: RegExp; field: string | null; message: (m: RegExpMatchAr
       message: () => 'Ese phone number ID ya lo usa otra sucursal.',
     },
     {
+      pattern: /^whatsappPhoneNumberId is already used by an ordering number$/,
+      field: 'whatsappPhoneNumberId',
+      message: () => 'Ese phone number ID es el de pedidos de una sucursal.',
+    },
+    {
+      pattern: /^phoneNumberId is already used by another branch$/,
+      field: 'phoneNumberId',
+      message: () => 'Ese phone number ID ya lo usa otra sucursal.',
+    },
+    {
+      pattern: /^phoneNumberId is already used by a waiter number$/,
+      field: 'phoneNumberId',
+      message: () => 'Ese phone number ID es el de un mesero. Pedidos necesita su propio número.',
+    },
+    {
+      pattern: /^phoneNumberId and phoneNumber are required to enable ordering$/,
+      field: null,
+      message: () =>
+        'Para activar los pedidos captura el phone number ID y el teléfono del número de pedidos.',
+    },
+    {
+      pattern: /^The branch needs latitude and longitude for delivery$/,
+      field: null,
+      message: () =>
+        'Para entregar a domicilio, captura primero las coordenadas de la sucursal en el Mesero digital.',
+    },
+    {
+      pattern: /^Zone "(.+)" needs a different from and to, or neither$/,
+      field: 'noDeliveryZones',
+      message: (m) => `La zona "${m[1]}" necesita hora de inicio y de fin distintas, o ninguna.`,
+    },
+    {
+      pattern: /^opens and closes must be different$/,
+      field: 'hours',
+      message: () => 'Cada horario necesita apertura y cierre distintos.',
+    },
+    {
       pattern: /^Only administrators can change/,
       field: null,
       message: () => 'Solo un administrador de BotBite puede cambiar eso.',
@@ -94,6 +131,10 @@ const RULES: { pattern: RegExp; message: (m: RegExpMatchArray) => string }[] = [
     message: () => 'Solo minúsculas, números y guiones.',
   },
   { pattern: /^must be numeric$/, message: () => 'Solo números.' },
+  {
+    pattern: /^must have (\d+) to (\d+) digits$/,
+    message: (m) => `Debe tener de ${m[1]} a ${m[2]} dígitos.`,
+  },
   { pattern: /^must be a boolean value$/, message: () => 'Debe ser sí o no.' },
 ];
 

@@ -116,6 +116,14 @@ export const routes: Routes = [
           import('./features/dashboard/notifications-component/notifications.component').then(
             m => m.NotificationsComponent
           )
+      },
+      {
+        path: 'to-deliver',
+        canActivate: [userGuard],
+        loadComponent: () =>
+          import('./features/dashboard/to-deliver-component/to-deliver.component').then(
+            (m) => m.ToDeliverComponent
+          ),
       }
     ],
   },

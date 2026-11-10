@@ -89,18 +89,24 @@ src/app/
 | Usuarios | admin | Crear cuentas `user` y `client`, activar o desactivar, y dar o quitar el rol admin |
 | Categorías | client | Categorías del restaurante y su orden en el menú |
 | Restaurantes | user | Restaurantes propios (los cajeros ven solo los de sus sucursales) |
-| Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal, **personal** y **mesero digital** |
+| Sucursales | user | Alta y edición, carga masiva por CSV, QR de la sucursal, **personal**, **mesero digital** y **pedidos** |
 | Productos | client | Catálogo y fotos |
 | Menús | client | Menús por sucursal, items, precios, recomendados y PDF. El menú completo se importa por CSV con vista previa, se exporta y tiene plantilla |
 | Órdenes | user | Mesas con cuenta abierta y sus rondas, en vivo. El personal mueve las comandas, cobra las cuentas y abre sus propias cuentas |
 | Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy |
 | Clientes | client | Clientes del restaurante: visitas, consumo, monedero, promociones, estado y favoritos, con filtros, orden y totales. El teléfono sale oculto; verlo completo y exportar a CSV quedan registrados, y la exportación se activa desde la API |
 | Notificaciones | user | Avisos de caja en tiempo real, por tipo; lo más viejo arriba en "No leídas", con un botón para invertir el orden |
+| Para entregar | user | Pedidos de recoger y domicilio pagados que faltan por entregar, en tarjetas por estado con los botones de caja (Preparar, Va en camino o Ya está listo, Entregado), dirección, teléfono y el interruptor "Recibiendo pedidos". El dueño o un admin puede cancelar un pedido pagado: el reembolso en Mercado Pago se hace a mano |
 
 ### Mesero digital
 En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp: ubicación y radio, hora de cierre, mesas válidas y encuesta.
 
 Un admin además administra lo que conecta con el servicio del mesero: el slug, el `phone_number_id` de Meta, la URL de los webhooks, las funciones contratadas y las llaves del bot. Cada llave se muestra una sola vez, al generarla.
+
+### Pedidos (recoger y domicilio)
+En **Sucursales → Pedidos**, el dueño configura el número de pedidos, que es aparte del mesero: tipos (recoger y domicilio), tarifa de envío y distancia máxima, zonas sin entrega (círculos con días y horario, sin mapa por ahora), horario de pedidos, pedidos programados, tiempos y el interruptor "Recibiendo pedidos".
+
+Un admin además activa los pedidos y captura su `phone_number_id`, su teléfono (como lo muestra WhatsApp, `521…`) y la comisión de BotBite. El dueño los ve, pero no los cambia. Para entregar a domicilio, la sucursal necesita sus coordenadas en el Mesero digital.
 
 ### Personal de la sucursal
 En **Sucursales → Personal**, el dueño (o un admin) asigna cajeros y meseros por correo. La cuenta debe existir con rol `user` (la crea un admin en **Usuarios**). El personal solo ve las sucursales asignadas y no puede modificar nada.
