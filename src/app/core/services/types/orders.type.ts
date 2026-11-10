@@ -115,6 +115,10 @@ export interface BillingPayment {
   status: PaymentStatus;
   orderCode: string | null;
   table: string | null;
+  /** Mesa, recoger o domicilio. null: el pago no tiene cuenta. */
+  orderType: OrderType | null;
+  /** Se aprobó, pero el pedido se canceló después: hay que reembolsarlo. */
+  toRefund: boolean;
   consumption: number;
   tip: number;
   /** Lo que debía la cuenta. */
@@ -135,6 +139,7 @@ export interface BillingInvoice {
   uuid: string;
   orderCode: string | null;
   table: string | null;
+  orderType: OrderType | null;
   rfc: string;
   legalName: string;
   cfdiUse: string;

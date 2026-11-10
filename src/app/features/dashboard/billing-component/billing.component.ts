@@ -16,7 +16,13 @@ import { OrgService } from '../../../core/services/org.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { BillingDay } from '../../../core/services/types/orders.type';
 import { TitleComponent } from '../../../shared/components/title/title';
-import { cfdiUseLabel, PAYMENT_STATUS, paymentFormLabel } from './billing-labels';
+import {
+  accountLabel,
+  cfdiUseLabel,
+  PAYMENT_STATUS,
+  paymentFormLabel,
+  REFUND_STATUS,
+} from './billing-labels';
 
 const RELOAD_DEBOUNCE_MS = 300;
 
@@ -33,6 +39,8 @@ export class BillingComponent implements OnDestroy {
   private readonly socketService = inject(SocketService);
 
   protected readonly paymentStatus = PAYMENT_STATUS;
+  protected readonly refundStatus = REFUND_STATUS;
+  protected readonly accountLabel = accountLabel;
   protected readonly paymentFormLabel = paymentFormLabel;
   protected readonly cfdiUseLabel = cfdiUseLabel;
 
@@ -43,8 +51,12 @@ export class BillingComponent implements OnDestroy {
   /** El día de hoy según la sucursal: lo dice la API. */
   protected readonly today = signal('');
 
+  /** Lo cobrado: los pedidos cancelados después de pagar se reembolsan. */
   protected readonly approved = computed(
-    () => this.day()?.payments.filter((payment) => payment.status === 'approved') ?? [],
+    () =>
+      this.day()?.payments.filter(
+        (payment) => payment.status === 'approved' && !payment.toRefund,
+      ) ?? [],
   );
   protected readonly collected = computed(() =>
     this.approved().reduce((sum, payment) => sum + payment.paidAmount, 0),

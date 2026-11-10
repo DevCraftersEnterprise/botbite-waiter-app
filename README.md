@@ -93,7 +93,7 @@ src/app/
 | Productos | client | Catálogo y fotos |
 | Menús | client | Menús por sucursal, items, precios, recomendados y PDF. El menú completo se importa por CSV con vista previa, se exporta y tiene plantilla |
 | Órdenes | user | Mesas con cuenta abierta y sus rondas, en vivo. El personal mueve las comandas, cobra las cuentas y abre sus propias cuentas |
-| Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy |
+| Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy. Un pedido pagado que se canceló sale "Por reembolsar" y no cuenta como cobrado; los pedidos dicen si son para recoger o a domicilio |
 | Clientes | client | Clientes del restaurante: visitas, consumo, monedero, promociones, estado y favoritos, con filtros, orden y totales. El teléfono sale oculto; verlo completo y exportar a CSV quedan registrados, y la exportación se activa desde la API |
 | Notificaciones | user | Avisos de caja en tiempo real, por tipo; lo más viejo arriba en "No leídas", con un botón para invertir el orden |
 | Para entregar | user | Pedidos de recoger y domicilio pagados que faltan por entregar, en tarjetas por estado con los botones de caja (Preparar, Va en camino o Ya está listo, Entregado), dirección, teléfono y el interruptor "Recibiendo pedidos". El dueño o un admin puede cancelar un pedido pagado: el reembolso en Mercado Pago se hace a mano |
