@@ -15,6 +15,7 @@ import { hasRole } from '../../../core/guards/roles.guard';
 import { AuthService } from '../../../core/services/auth.service';
 import { IconsService } from '../../../core/services/icons.service';
 import { OrgService } from '../../../core/services/org.service';
+import { SocketService } from '../../../core/services/socket.service';
 import type { UserRole } from '../../../core/services/types/common.types';
 import { RoleBadgeComponent } from '../../../shared/components/role-badge/role-badge';
 
@@ -44,6 +45,8 @@ export class ShellComponent implements OnInit {
   protected authService = inject(AuthService);
   protected orgService = inject(OrgService);
   protected readonly iconsService = inject(IconsService);
+  /** La conexión en vivo es de todo el panel: el aviso sale en cualquier pantalla. */
+  protected readonly socketService = inject(SocketService);
 
   open = signal(false);
 
