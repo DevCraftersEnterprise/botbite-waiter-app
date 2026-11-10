@@ -59,6 +59,37 @@ export interface OrderAccount {
   rounds: OrderRound[];
 }
 
+export type OrderType = 'dine_in' | 'pickup' | 'delivery';
+
+/** Entrega de un pedido de recoger o domicilio, desde que se paga. */
+export type FulfillmentStatus =
+  | 'pending'
+  | 'preparing'
+  | 'on_the_way'
+  | 'ready'
+  | 'delivered'
+  | 'cancelled';
+
+/** Dónde entregar. La API la borra 30 días después. */
+export interface DeliveryInfo {
+  address: string | null;
+  references: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+/** Pedido de recoger o domicilio ya pagado, en "Para entregar". */
+export interface DeliveryOrder extends OrderAccount {
+  type: OrderType;
+  fulfillmentStatus: FulfillmentStatus;
+  fulfillmentUpdatedAt: string | null;
+  scheduledFor: string | null;
+  deliveryFee: number;
+  delivery: DeliveryInfo | null;
+  /** Para llamar al cliente. */
+  phone: string | null;
+}
+
 export interface OrdersSummary {
   accounts: number;
   openAccounts: number;

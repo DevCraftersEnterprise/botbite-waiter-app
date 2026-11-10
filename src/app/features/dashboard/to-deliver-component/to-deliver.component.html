@@ -1,0 +1,146 @@
+<div class="section-spacing">
+  <div class="page-header">
+    <shared-title
+      title="Para entregar"
+      description="Pedidos de recoger y a domicilio ya pagados que faltan por entregar"
+    />
+
+    @if (accepting() !== null) {
+      <div class="actions-bar">
+        <label
+          class="flex items-center gap-2 rounded-xl border border-black/10 px-3 py-2 text-sm"
+          [class.bg-amber-50]="!accepting()"
+        >
+          <input
+            type="checkbox"
+            class="rounded"
+            [checked]="accepting()"
+            [disabled]="togglingAccepting()"
+            (change)="toggleAccepting($event)"
+          />
+          <span>{{ accepting() ? 'Recibiendo pedidos' : 'Pedidos en pausa' }}</span>
+        </label>
+      </div>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-12">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-black/10 border-t-black"></div>
+    </div>
+  } @else if (!orders().length) {
+    <p class="py-12 text-center text-sm text-neutral-500">
+      No hay pedidos por entregar. Aquí aparecen en cuanto el cliente paga.
+    </p>
+  } @else {
+    <div class="grid items-start gap-4 lg:grid-cols-3">
+      @for (column of columns(); track column.key) {
+        <section class="space-y-3" [attr.aria-label]="column.title">
+          <h2 class="text-sm font-semibold text-neutral-700">
+            {{ column.title }}
+            <span class="font-normal text-neutral-400">({{ column.orders.length }})</span>
+          </h2>
+
+          @for (order of column.orders; track order.id) {
+            <article class="card animate-fade-in animate-duration-300 space-y-3 !p-4">
+              <header class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate font-semibold text-black">
+                    {{ typeLabel[order.type] }} · {{ order.customerName || 'Sin nombre' }}
+                  </p>
+                  <p class="text-xs text-neutral-500">Pedido {{ order.code }}</p>
+                </div>
+                <span class="status-chip" [class]="statusLabel[order.fulfillmentStatus].classes">
+                  {{ statusLabel[order.fulfillmentStatus].label }}
+                </span>
+              </header>
+
+              @if (order.scheduledFor) {
+                <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
+                  Programado para {{ scheduled(order.scheduledFor) }}
+                </p>
+              } @else if (order.closedAt) {
+                <p class="text-xs text-neutral-500">
+                  Pagado a las {{ order.closedAt | date: 'HH:mm' }}
+                </p>
+              }
+
+              <ul class="space-y-1">
+                @for (round of order.rounds; track round.id) {
+                  @if (round.status !== 'cancelled') {
+                    @for (item of round.items; track item.id) {
+                      <li class="text-sm">
+                        <span class="font-medium">{{ item.quantity }}x</span> {{ item.name }}
+                        @if (item.note) {
+                          <span class="block text-xs text-neutral-500 italic">{{ item.note }}</span>
+                        }
+                      </li>
+                    }
+                  }
+                }
+              </ul>
+
+              <dl class="space-y-0.5 text-sm">
+                @if (order.walletDiscount > 0) {
+                  <div class="flex justify-between text-neutral-600">
+                    <dt>Monedero</dt>
+                    <dd>-{{ order.walletDiscount | currency: 'MXN' : 'symbol-narrow' }}</dd>
+                  </div>
+                }
+                @if (order.deliveryFee > 0) {
+                  <div class="flex justify-between text-neutral-600">
+                    <dt>Envío</dt>
+                    <dd>{{ order.deliveryFee | currency: 'MXN' : 'symbol-narrow' }}</dd>
+                  </div>
+                }
+                <div class="flex justify-between font-medium">
+                  <dt>Pagado</dt>
+                  <dd>{{ order.amountDue | currency: 'MXN' : 'symbol-narrow' }}</dd>
+                </div>
+              </dl>
+
+              @if (order.type === 'delivery') {
+                <div class="space-y-1 rounded-lg border border-black/10 px-3 py-2 text-sm">
+                  <p>{{ order.delivery?.address || 'Sin dirección' }}</p>
+                  @if (order.delivery?.references) {
+                    <p class="text-xs text-neutral-500">{{ order.delivery?.references }}</p>
+                  }
+                  @if (mapUrl(order); as url) {
+                    <a class="text-xs underline" [href]="url" target="_blank" rel="noopener">
+                      Ver el punto en el mapa
+                    </a>
+                  }
+                </div>
+              }
+
+              @if (order.phone) {
+                <a
+                  class="block text-sm underline"
+                  [href]="'tel:' + order.phone"
+                  [attr.aria-label]="'Llamar a ' + (order.customerName || 'el cliente')"
+                >
+                  {{ order.phone }}
+                </a>
+              }
+
+              <div class="flex flex-wrap gap-2">
+                @for (step of steps(order); track step.status) {
+                  <button
+                    class="btn-small"
+                    [disabled]="updatingId() === order.id"
+                    [attr.aria-label]="step.label + ': pedido ' + order.code"
+                    (click)="move(order, step.status)"
+                  >
+                    {{ step.label }}
+                  </button>
+                }
+              </div>
+            </article>
+          } @empty {
+            <p class="text-xs text-neutral-400">Ninguno.</p>
+          }
+        </section>
+      }
+    </div>
+  }
+</div>
