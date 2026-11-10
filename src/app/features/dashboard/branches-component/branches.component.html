@@ -196,6 +196,18 @@
 
                 <button
                   class="btn-table-neutral"
+                  (click)="orderingBranch.set(branch)"
+                  [attr.aria-label]="'Pedidos de ' + branch.name"
+                  [title]="'Pedidos de recoger y domicilio de ' + branch.name"
+                >
+                  <div class="flex items-center justify-center gap-1">
+                    <lucide-icon [img]="iconsService.ordering" size="15"></lucide-icon>
+                    <span class="hidden text-xs 2xl:inline">Pedidos</span>
+                  </div>
+                </button>
+
+                <button
+                  class="btn-table-neutral"
                   (click)="openStaff(branch)"
                   [attr.aria-label]="'Personal de ' + branch.name"
                   [title]="'Personal de ' + branch.name"
@@ -395,6 +407,8 @@
     (closed)="botBranch.set(null)"
     (saved)="reload()"
   />
+
+  <app-ordering-modal [branch]="orderingBranch()" (closed)="orderingBranch.set(null)" />
 
   <app-modal
     [isOpen]="!!staffBranch()"
