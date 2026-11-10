@@ -39,6 +39,7 @@ export class NotificationsComponent implements OnDestroy {
   private readonly socketService = inject(SocketService);
 
   private notificationSubscription?: Subscription;
+  private resyncSubscription?: Subscription;
 
   /** Qué se ve en cada tipo de aviso. */
   protected readonly types: Record<
@@ -103,8 +104,14 @@ export class NotificationsComponent implements OnDestroy {
     this.notificationSubscription = this.socketService
       .getNotificationUpdates()
       .subscribe((update) => {
-        this.handleNotificationUpdate(update.notification);
+        this.handleNotificationUpdate(update.notification, { announce: true });
       });
+
+    // Lo que llegó mientras no había conexión en vivo no se repite: se vuelve a pedir.
+    this.resyncSubscription = this.socketService.getResyncs().subscribe(() => {
+      const branchId = this.orgService.selectedBranchId();
+      if (branchId) this.loadNotifications(branchId, { quiet: true });
+    });
 
     // La sucursal puede resolverse después de abrir la pantalla (al recargar) o
     // cambiar mientras está abierta.
@@ -156,8 +163,9 @@ export class NotificationsComponent implements OnDestroy {
     }
   }
 
-  private loadNotifications(branchId: string): void {
-    this.isLoading.set(true);
+  /** `quiet`: recarga sin el indicador de carga ni el aviso de error. */
+  private loadNotifications(branchId: string, { quiet = false }: { quiet?: boolean } = {}): void {
+    if (!quiet) this.isLoading.set(true);
     this.ordersService.getNotificationsByBranch(branchId).subscribe({
       next: (data: { active: CashierNotification[]; inactive: CashierNotification[] }) => {
         this.activeNotifications.set(data.active);
@@ -166,13 +174,21 @@ export class NotificationsComponent implements OnDestroy {
       },
       error: (error) => {
         console.error('Error loading notifications:', error);
-        this.toastrService.error('Error al cargar las notificaciones.');
+        if (!quiet) this.toastrService.error('Error al cargar las notificaciones.');
         this.isLoading.set(false);
       }
     });
   }
 
-  private handleNotificationUpdate(notification: CashierNotification): void {
+  /**
+   * Pone el aviso en la lista que le toca. Solo suena y muestra "Nueva
+   * notificación" con `announce` (lo que llega en vivo): deshacer un clic que
+   * falló o marcar como no leída no es un aviso nuevo.
+   */
+  private handleNotificationUpdate(
+    notification: CashierNotification,
+    { announce = false }: { announce?: boolean } = {}
+  ): void {
     if (notification.isActive) {
       const activeList = this.activeNotifications();
       const index = activeList.findIndex(n => n.id === notification.id);
@@ -183,8 +199,10 @@ export class NotificationsComponent implements OnDestroy {
         this.activeNotifications.set(updated);
       } else {
         this.activeNotifications.set([notification, ...activeList]);
-        this.toastrService.info(notification.message, 'Nueva notificación');
-        this.playAlert();
+        if (announce) {
+          this.toastrService.info(notification.message, 'Nueva notificación');
+          this.playAlert();
+        }
       }
 
       this.removeFromInactive(notification.id);
@@ -248,5 +266,6 @@ export class NotificationsComponent implements OnDestroy {
       this.socketService.leaveBranch(branchId);
     }
     this.notificationSubscription?.unsubscribe();
+    this.resyncSubscription?.unsubscribe();
   }
 }

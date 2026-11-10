@@ -159,6 +159,19 @@
           </button>
         </div>
       </div>
+
+      <!-- Sin conexión en vivo (decisión 9): los pedidos y avisos nuevos no llegan solos. -->
+      @if (socketService.offline()) {
+        <div
+          class="flex items-center gap-2 bg-red-600 px-4 py-1.5 text-sm text-white"
+          role="status"
+          data-testid="offline-banner"
+        >
+          <lucide-icon [img]="iconsService.offline" size="16" aria-hidden="true"></lucide-icon>
+          <span class="font-semibold">Sin conexión en vivo.</span>
+          <span class="hidden sm:inline">Reintentando; mientras tanto, la pantalla se actualiza cada 30 segundos.</span>
+        </div>
+      }
     </header>
 
     <!-- MAIN -->

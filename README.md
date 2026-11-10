@@ -75,11 +75,19 @@ src/app/
 ## Sesión y tiempo real
 
 - **Login:** guarda `access_token` y `refresh_token` en `localStorage`.
-- **Renovación:** ante un 401, el interceptor pide un token nuevo con `POST /auth/refresh-token` y guarda **también el nuevo refresh token**. La API los rota en cada uso e invalida el anterior.
+- **Renovación:** ante un 401, el interceptor pide un token nuevo con `POST /auth/refresh-token` (`AuthService.renewAccessToken`) y guarda **también el nuevo refresh token**. La API los rota en cada uso, y si alguien reutiliza uno ya usado, cierra todas las sesiones del usuario. Por eso:
+  - las peticiones que fallan juntas esperan una sola renovación y se reintentan una vez;
+  - entre pestañas, un candado del navegador (Web Locks, `botbite.refresh-session`) deja renovar a una sola a la vez, y las demás usan el token que dejó;
+  - si la API no contesta (red, 5xx o 429), la sesión sigue abierta. Solo se cierra si la API rechaza el refresh token.
 - **Logout:** revoca el refresh token en la API.
-- **WebSocket** (`/orders`): se conecta con el access token (`auth.token`) y se une a la sala de la sucursal seleccionada. Al reconectar vuelve a unirse automáticamente. Recibe:
+- **WebSocket** (`/orders`): se conecta con el access token (`auth.token`) y se une a la sala de la sucursal seleccionada. Recibe:
   - `orderUpdate`: refrescar pedidos;
   - `notificationUpdate`: avisos de caja (pedido nuevo, cuenta, amenidades, alertas).
+- **Si se corta la conexión en vivo** (`SocketService`):
+  - reintenta sin límite, cada vez más espaciado, hasta cada 10 segundos;
+  - si la API rechaza el token, lo renueva igual que el interceptor y vuelve a conectar;
+  - a los 10 segundos sin conexión, la barra de arriba muestra "Sin conexión en vivo" en rojo, y cada 30 segundos consulta `GET /health`: si la API contesta, la pantalla recarga;
+  - al reconectar, vuelve a unirse a la sala y la pantalla recarga, porque lo que pasó en el corte no se repite por el socket (`getResyncs()`; `getOrderUpdates()` ya lo incluye).
 
 ## Funciones por pantalla
 
