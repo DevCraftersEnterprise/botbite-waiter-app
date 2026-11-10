@@ -1,4 +1,4 @@
-import { PaymentStatus } from '../../../core/services/types/orders.type';
+import { OrderType, PaymentStatus } from '../../../core/services/types/orders.type';
 
 interface StatusLabel {
   label: string;
@@ -13,6 +13,21 @@ export const PAYMENT_STATUS: Record<PaymentStatus, StatusLabel> = {
     classes: 'border-red-200 bg-red-100 text-red-800',
   },
 };
+
+/** Un pago aprobado de un pedido que se canceló después. */
+export const REFUND_STATUS: StatusLabel = {
+  label: 'Por reembolsar',
+  classes: 'border-red-200 bg-red-100 text-red-800',
+};
+
+const ORDER_TYPE: Partial<Record<OrderType, string>> = {
+  pickup: 'Para recoger',
+  delivery: 'A domicilio',
+};
+
+/** La mesa, o el tipo de pedido si no tiene mesa. */
+export const accountLabel = (item: { table: string | null; orderType: OrderType | null }): string =>
+  item.table ?? (item.orderType && ORDER_TYPE[item.orderType]) ?? '—';
 
 /** Claves del SAT que usa el mesero. Las demás se muestran tal cual. */
 const PAYMENT_FORMS: Record<string, string> = {
