@@ -90,6 +90,12 @@ export interface DeliveryOrder extends OrderAccount {
   phone: string | null;
 }
 
+/** Respuesta al cancelar un pedido pagado: lo que hay que reembolsar. */
+export interface CancelPaidResult {
+  refundAmount: number;
+  providerPaymentId: string | null;
+}
+
 export interface OrdersSummary {
   accounts: number;
   openAccounts: number;

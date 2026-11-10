@@ -7,6 +7,7 @@ import { CashierNotification } from './socket.service';
 import {
   BillingDay,
   BranchCatalog,
+  CancelPaidResult,
   CatalogItem,
   DeliveryOrder,
   FulfillmentStatus,
@@ -45,6 +46,11 @@ export class OrdersService {
     return this.http.patch<void>(`${this.apiUrl}/orders/${orderId}/fulfillment`, { status });
   }
 
+  /** Solo el dueño o un admin: el reembolso en Mercado Pago es a mano por ahora. */
+  cancelPaid(orderId: string): Observable<CancelPaidResult> {
+    return this.http.post<CancelPaidResult>(`${this.apiUrl}/orders/${orderId}/cancel-paid`, {});
+  }
+
   summary(branchId: string): Observable<OrdersSummary> {
     const params = new HttpParams().set('branchId', branchId);
 
@@ -72,7 +78,7 @@ export class OrdersService {
         map((response) => ({
           catalog: response.catalog,
           validTables: response.validTables ?? [],
-        })),
+        }))
       );
   }
 

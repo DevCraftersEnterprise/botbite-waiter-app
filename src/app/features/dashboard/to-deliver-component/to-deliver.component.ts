@@ -12,12 +12,14 @@ import {
 import { LucideAngularModule } from 'lucide-angular';
 import { ToastrService } from 'ngx-toastr';
 import { debounceTime, Subscription } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 import { BotService } from '../../../core/services/bot.service';
 import { IconsService } from '../../../core/services/icons.service';
 import { OrdersService } from '../../../core/services/orders.service';
 import { OrgService } from '../../../core/services/org.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { DeliveryOrder, FulfillmentStatus } from '../../../core/services/types/orders.type';
+import { ModalComponent } from '../../../shared/components/modal/modal';
 import { TitleComponent } from '../../../shared/components/title/title';
 import {
   deliveryMapUrl,
@@ -33,7 +35,7 @@ const RELOAD_DEBOUNCE_MS = 300;
 /** Pedidos de recoger y domicilio pagados que faltan por entregar. */
 @Component({
   selector: 'app-to-deliver',
-  imports: [CommonModule, LucideAngularModule, TitleComponent],
+  imports: [CommonModule, LucideAngularModule, ModalComponent, TitleComponent],
   templateUrl: './to-deliver.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -41,6 +43,7 @@ export class ToDeliverComponent implements OnDestroy {
   protected readonly orgService = inject(OrgService);
   private readonly ordersService = inject(OrdersService);
   private readonly botService = inject(BotService);
+  private readonly authService = inject(AuthService);
   private readonly toastrService = inject(ToastrService);
   private readonly socketService = inject(SocketService);
   protected readonly iconsService = inject(IconsService);
@@ -52,6 +55,15 @@ export class ToDeliverComponent implements OnDestroy {
   protected readonly loading = signal(true);
   protected readonly updatingId = signal<string | null>(null);
   protected readonly columns = computed(() => groupByStatus(this.orders()));
+
+  /** Cancelar implica devolver dinero: solo el dueño y los admins. */
+  protected readonly canCancel = computed(() => {
+    const roles = this.authService.user()?.roles || [];
+    return roles.includes('super') || roles.includes('admin') || roles.includes('client');
+  });
+  /** Pedido que se va a cancelar, a la espera de confirmar. */
+  protected readonly cancelTarget = signal<DeliveryOrder | null>(null);
+  protected readonly cancelling = signal(false);
 
   /** null: la sucursal no tiene pedidos activos y no se muestra el interruptor. */
   protected readonly accepting = signal<boolean | null>(null);
@@ -138,6 +150,35 @@ export class ToDeliverComponent implements OnDestroy {
       error: () => {
         this.updatingId.set(null);
         this.toastrService.error('No se pudo actualizar el pedido.');
+        this.load();
+      },
+    });
+  }
+
+  protected confirmCancel(): void {
+    const order = this.cancelTarget();
+    if (!order) return;
+
+    this.cancelling.set(true);
+
+    this.ordersService.cancelPaid(order.id).subscribe({
+      next: ({ refundAmount, providerPaymentId }) => {
+        this.cancelling.set(false);
+        this.cancelTarget.set(null);
+        const amount = refundAmount.toLocaleString('es-MX', {
+          style: 'currency',
+          currency: 'MXN',
+        });
+        this.toastrService.success(
+          providerPaymentId
+            ? `Pedido cancelado. Reembolsa ${amount} en Mercado Pago (operación ${providerPaymentId}).`
+            : 'Pedido cancelado. No se encontró su pago: revísalo en Mercado Pago.'
+        );
+        this.load();
+      },
+      error: () => {
+        this.cancelling.set(false);
+        this.toastrService.error('No se pudo cancelar el pedido.');
         this.load();
       },
     });
