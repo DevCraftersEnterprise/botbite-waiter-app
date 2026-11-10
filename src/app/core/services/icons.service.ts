@@ -44,6 +44,7 @@ import {
   Image,
   Bell,
   MessageCircle,
+  WifiOff,
 } from 'lucide-angular';
 
 @Injectable({
@@ -51,6 +52,7 @@ import {
 })
 export class IconsService {
   readonly logout = LogOut;
+  readonly offline = WifiOff;
   readonly power = Power;
   readonly menu = Menu;
   readonly house = House;
