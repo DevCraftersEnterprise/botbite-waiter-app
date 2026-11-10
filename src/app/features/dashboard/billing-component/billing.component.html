@@ -33,7 +33,7 @@
         <p class="mt-1 text-2xl font-semibold" [class]="toReview() ? 'text-red-700' : 'text-black'">
           {{ toReview() }}
         </p>
-        <p class="text-xs text-neutral-500">Incompletos o sin cuenta abierta</p>
+        <p class="text-xs text-neutral-500">Incompletos, sin cuenta abierta o por reembolsar</p>
       </div>
       <div class="card !p-5">
         <p class="text-sm text-neutral-500">Facturado</p>
@@ -53,7 +53,7 @@
             <thead class="bg-neutral-50 text-neutral-600">
               <tr>
                 <th class="w-20 px-4 py-3 text-left font-medium">Hora</th>
-                <th class="w-24 px-4 py-3 text-left font-medium">Mesa</th>
+                <th class="w-32 px-4 py-3 text-left font-medium">Mesa o pedido</th>
                 <th class="w-40 px-4 py-3 text-left font-medium">Estado</th>
                 <th class="px-4 py-3 text-right font-medium">Debía</th>
                 <th class="px-4 py-3 text-right font-medium">Pagó</th>
@@ -66,13 +66,23 @@
               @for (payment of day.payments; track payment.id) {
                 <tr class="animate-fade-in animate-duration-300 border-t border-black/10">
                   <td class="px-4 py-3">{{ payment.paidAt | date: 'HH:mm' }}</td>
-                  <td class="truncate px-4 py-3" [title]="payment.table ?? ''">
-                    {{ payment.table ?? '—' }}
+                  <td class="truncate px-4 py-3" [title]="accountLabel(payment)">
+                    {{ accountLabel(payment) }}
                   </td>
                   <td class="px-4 py-3">
-                    <span class="status-chip" [class]="paymentStatus[payment.status].classes">
-                      {{ paymentStatus[payment.status].label }}
-                    </span>
+                    @if (payment.toRefund) {
+                      <span
+                        class="status-chip"
+                        [class]="refundStatus.classes"
+                        title="El pedido se canceló después de pagarse: reembolsa en Mercado Pago"
+                      >
+                        {{ refundStatus.label }}
+                      </span>
+                    } @else {
+                      <span class="status-chip" [class]="paymentStatus[payment.status].classes">
+                        {{ paymentStatus[payment.status].label }}
+                      </span>
+                    }
                   </td>
                   <td class="px-4 py-3 text-right">
                     @if (payment.orderCode) {
@@ -88,7 +98,16 @@
                     {{ payment.tip | currency: 'MXN' : 'symbol-narrow' }}
                   </td>
                   <td class="px-4 py-3 text-right">
-                    {{ payment.cashbackEarned | currency: 'MXN' : 'symbol-narrow' }}
+                    @if (payment.toRefund && payment.cashbackEarned > 0) {
+                      <span
+                        class="text-neutral-400 line-through"
+                        title="Se le quitó al cancelar el pedido"
+                      >
+                        {{ payment.cashbackEarned | currency: 'MXN' : 'symbol-narrow' }}
+                      </span>
+                    } @else {
+                      {{ payment.cashbackEarned | currency: 'MXN' : 'symbol-narrow' }}
+                    }
                   </td>
                   <td
                     class="truncate px-4 py-3 font-mono text-xs text-neutral-600"
@@ -120,7 +139,7 @@
               <tr>
                 <th class="w-20 px-4 py-3 text-left font-medium">Hora</th>
                 <th class="w-40 px-4 py-3 text-left font-medium">Folio</th>
-                <th class="w-20 px-4 py-3 text-left font-medium">Mesa</th>
+                <th class="w-32 px-4 py-3 text-left font-medium">Mesa o pedido</th>
                 <th class="px-4 py-3 text-left font-medium">Cliente</th>
                 <th class="w-52 px-4 py-3 text-left font-medium">Uso y forma de pago</th>
                 <th class="w-28 px-4 py-3 text-right font-medium">Total</th>
@@ -140,8 +159,8 @@
                       {{ invoice.uuid }}
                     </p>
                   </td>
-                  <td class="truncate px-4 py-3" [title]="invoice.table ?? ''">
-                    {{ invoice.table ?? '—' }}
+                  <td class="truncate px-4 py-3" [title]="accountLabel(invoice)">
+                    {{ accountLabel(invoice) }}
                   </td>
                   <td class="px-4 py-3">
                     <p class="truncate text-black" [title]="invoice.legalName">
