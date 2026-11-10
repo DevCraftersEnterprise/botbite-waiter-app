@@ -134,6 +134,16 @@
                     {{ step.label }}
                   </button>
                 }
+                @if (canCancel()) {
+                  <button
+                    class="btn-small-danger ml-auto"
+                    [disabled]="updatingId() === order.id"
+                    [attr.aria-label]="'Cancelar el pedido ' + order.code"
+                    (click)="cancelTarget.set(order)"
+                  >
+                    Cancelar pedido
+                  </button>
+                }
               </div>
             </article>
           } @empty {
@@ -143,4 +153,32 @@
       }
     </div>
   }
+
+  <app-modal
+    [isOpen]="!!cancelTarget()"
+    title="Cancelar pedido"
+    [showActions]="true"
+    [loading]="cancelling()"
+    confirmText="Cancelar pedido"
+    (close)="cancelTarget.set(null)"
+    (cancel)="cancelTarget.set(null)"
+    (confirm)="confirmCancel()"
+  >
+    @if (cancelTarget(); as order) {
+      <div class="space-y-2 text-sm text-neutral-700">
+        <p>
+          ¿Cancelar el pedido {{ order.code }} de {{ order.customerName || 'el cliente' }}? Se le
+          avisa por WhatsApp.
+        </p>
+        <p class="rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
+          Hay que reembolsar {{ order.amountDue | currency: 'MXN' : 'symbol-narrow' }} en Mercado
+          Pago: por ahora el reembolso se hace a mano.
+        </p>
+        <p class="text-xs text-neutral-500">
+          Se le devuelve el saldo del monedero que usó y se le quita el cashback que ganó con este
+          pedido.
+        </p>
+      </div>
+    }
+  </app-modal>
 </div>

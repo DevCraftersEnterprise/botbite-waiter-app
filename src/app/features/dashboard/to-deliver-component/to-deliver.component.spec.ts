@@ -2,9 +2,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/services/auth.service';
 import { OrgService } from '../../../core/services/org.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { DeliveryOrder } from '../../../core/services/types/orders.type';
@@ -96,6 +98,7 @@ describe('ToDeliverComponent', () => {
         provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: ToastrService, useValue: toastr },
         {
           provide: OrgService,
@@ -115,6 +118,11 @@ describe('ToDeliverComponent', () => {
       ],
     }).compileComponents();
 
+    TestBed.inject(AuthService).user.set({
+      id: 'u1',
+      email: 'owner@botbite.test',
+      roles: ['client'],
+    });
     backend = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(ToDeliverComponent);
     await fixture.whenStable();
@@ -183,6 +191,37 @@ describe('ToDeliverComponent', () => {
     await fixture.whenStable();
 
     expect(text()).toContain('Pedidos en pausa');
+  });
+
+  it('lets the owner cancel a paid order after confirming the refund', async () => {
+    await answer([order()]);
+
+    button('Cancelar pedido')!.click();
+    await fixture.whenStable();
+    expect(text()).toContain('Hay que reembolsar $322.00 en Mercado Pago');
+
+    const confirm = [...element().querySelectorAll('button')].filter(
+      (b) => b.textContent?.trim() === 'Cancelar pedido'
+    );
+    confirm[confirm.length - 1].click();
+
+    const request = backend.expectOne(`${api}/orders/o1/cancel-paid`);
+    expect(request.request.method).toBe('POST');
+    request.flush({ refundAmount: 322, providerPaymentId: 'MP-1' });
+    await fixture.whenStable();
+
+    expect(toastr.success).toHaveBeenCalledWith(
+      jasmine.stringMatching(
+        /Pedido cancelado\. Reembolsa .*322\.00 en Mercado Pago \(operación MP-1\)/
+      )
+    );
+    backend.expectOne((r) => r.url === listUrl).flush({ orders: [], total: 0 });
+  });
+
+  it('does not offer cancelling to the staff', async () => {
+    TestBed.inject(AuthService).user.set({ id: 'u2', email: 'caja@botbite.test', roles: ['user'] });
+    await answer([order()]);
+    expect(button('Cancelar pedido')).toBeUndefined();
   });
 
   it('hides the switch when the branch has no ordering', async () => {
