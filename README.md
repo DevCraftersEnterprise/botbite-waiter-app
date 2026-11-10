@@ -96,6 +96,7 @@ src/app/
 | Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy |
 | Clientes | client | Clientes del restaurante: visitas, consumo, monedero, promociones, estado y favoritos, con filtros, orden y totales. El teléfono sale oculto; verlo completo y exportar a CSV quedan registrados, y la exportación se activa desde la API |
 | Notificaciones | user | Avisos de caja en tiempo real, por tipo; lo más viejo arriba en "No leídas", con un botón para invertir el orden |
+| Para entregar | user | Pedidos de recoger y domicilio pagados que faltan por entregar, en tarjetas por estado con los botones de caja (Preparar, Va en camino o Ya está listo, Entregado), dirección, teléfono y el interruptor "Recibiendo pedidos" |
 
 ### Mesero digital
 En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp: ubicación y radio, hora de cierre, mesas válidas y encuesta.

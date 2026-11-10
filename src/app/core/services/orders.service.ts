@@ -8,6 +8,8 @@ import {
   BillingDay,
   BranchCatalog,
   CatalogItem,
+  DeliveryOrder,
+  FulfillmentStatus,
   OrderAccount,
   OrdersSummary,
   RoundItemInput,
@@ -28,6 +30,19 @@ export class OrdersService {
     return this.http
       .get<{ orders: OrderAccount[] }>(`${this.apiUrl}/orders/active`, { params })
       .pipe(map((response) => response.orders));
+  }
+
+  /** Pedidos de recoger y domicilio pagados que faltan por entregar. */
+  toDeliver(branchId: string): Observable<DeliveryOrder[]> {
+    const params = new HttpParams().set('branchId', branchId);
+
+    return this.http
+      .get<{ orders: DeliveryOrder[] }>(`${this.apiUrl}/orders/to-deliver`, { params })
+      .pipe(map((response) => response.orders));
+  }
+
+  updateFulfillment(orderId: string, status: FulfillmentStatus): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/orders/${orderId}/fulfillment`, { status });
   }
 
   summary(branchId: string): Observable<OrdersSummary> {
