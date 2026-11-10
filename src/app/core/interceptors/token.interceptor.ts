@@ -1,75 +1,40 @@
-import { HttpClient, HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-
-let isRefreshing = false;
-
-interface RefreshTokenResponse {
-  accessToken?: string;
-  refreshToken?: string;
-  access_token?: string;
-  refresh_token?: string;
-}
 
 // El token solo viaja a la API: nunca a otro dominio (imágenes, CDNs, etc.).
 const isApiRequest = (url: string) =>
   url === environment.apiBaseUrl || url.startsWith(`${environment.apiBaseUrl}/`);
 
+// Un 401 de estas rutas no se arregla renovando la sesión.
+const SESSION_ROUTES = ['/auth/login', '/auth/refresh-token', '/auth/logout'];
+const isSessionRoute = (url: string) => SESSION_ROUTES.some((route) => url.includes(route));
+
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   if (!isApiRequest(req.url)) return next(req);
 
   const auth = inject(AuthService);
-  const http = inject(HttpClient);
 
   const token = auth.accessToken;
   const withAuth = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
   return next(withAuth).pipe(
     catchError((err: HttpErrorResponse) => {
-      if (
-        err.status === 401 &&
-        auth.refreshToken &&
-        !isRefreshing &&
-        !req.url.includes('/auth/refresh-token')
-      ) {
-        isRefreshing = true;
-
-        return http
-          .post<RefreshTokenResponse>(`${environment.apiBaseUrl}/auth/refresh-token`, {
-            refreshToken: auth.refreshToken,
-          })
-          .pipe(
-            switchMap((res) => {
-              isRefreshing = false;
-
-              const accessToken = res?.accessToken ?? res?.access_token;
-              const refreshToken = res?.refreshToken ?? res?.refresh_token;
-
-              if (accessToken) {
-                localStorage.setItem('botbite.access', accessToken);
-                // La API rota el refresh token en cada uso: el anterior ya no sirve.
-                if (refreshToken) localStorage.setItem('botbite.refresh', refreshToken);
-
-                const retried = req.clone({
-                  setHeaders: { Authorization: `Bearer ${accessToken}` },
-                });
-                return next(retried);
-              }
-
-              auth.logout();
-              return throwError(() => err);
-            }),
-            catchError((refreshErr) => {
-              isRefreshing = false;
-              auth.logout();
-              return throwError(() => refreshErr);
-            })
-          );
+      if (err.status !== 401 || !auth.refreshToken || isSessionRoute(req.url)) {
+        return throwError(() => err);
       }
 
-      return throwError(() => err);
+      // Todas las peticiones que fallan juntas esperan la misma renovación y se
+      // reintentan una sola vez con el token nuevo.
+      return from(auth.renewAccessToken(token)).pipe(
+        switchMap((accessToken) => {
+          if (!accessToken) return throwError(() => err);
+
+          return next(req.clone({ setHeaders: { Authorization: `Bearer ${accessToken}` } }));
+        })
+      );
     })
   );
 };

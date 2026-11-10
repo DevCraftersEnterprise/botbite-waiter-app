@@ -103,7 +103,7 @@ export class NotificationsComponent implements OnDestroy {
     this.notificationSubscription = this.socketService
       .getNotificationUpdates()
       .subscribe((update) => {
-        this.handleNotificationUpdate(update.notification);
+        this.handleNotificationUpdate(update.notification, { announce: true });
       });
 
     // La sucursal puede resolverse después de abrir la pantalla (al recargar) o
@@ -172,7 +172,15 @@ export class NotificationsComponent implements OnDestroy {
     });
   }
 
-  private handleNotificationUpdate(notification: CashierNotification): void {
+  /**
+   * Pone el aviso en la lista que le toca. Solo suena y muestra "Nueva
+   * notificación" con `announce` (lo que llega en vivo): deshacer un clic que
+   * falló o marcar como no leída no es un aviso nuevo.
+   */
+  private handleNotificationUpdate(
+    notification: CashierNotification,
+    { announce = false }: { announce?: boolean } = {}
+  ): void {
     if (notification.isActive) {
       const activeList = this.activeNotifications();
       const index = activeList.findIndex(n => n.id === notification.id);
@@ -183,8 +191,10 @@ export class NotificationsComponent implements OnDestroy {
         this.activeNotifications.set(updated);
       } else {
         this.activeNotifications.set([notification, ...activeList]);
-        this.toastrService.info(notification.message, 'Nueva notificación');
-        this.playAlert();
+        if (announce) {
+          this.toastrService.info(notification.message, 'Nueva notificación');
+          this.playAlert();
+        }
       }
 
       this.removeFromInactive(notification.id);
