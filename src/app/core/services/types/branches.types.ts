@@ -11,6 +11,9 @@ export interface Branch {
   surveyUrl?: string | null;
   /** La usan el mesero y los pedidos. */
   timezone?: string;
+  /** Centra el mapa de las zonas sin entrega. */
+  latitude?: number | string | null;
+  longitude?: number | string | null;
   restaurantId: string;
   /** Si el bot revisa que el comensal esté en el restaurante. */
   verifyLocation?: boolean;
