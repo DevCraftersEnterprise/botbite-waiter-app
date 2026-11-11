@@ -84,12 +84,13 @@ export const deliveryMapUrl = (delivery: DeliveryInfo | null): string | null =>
     ? `https://www.google.com/maps/search/?api=1&query=${delivery.latitude},${delivery.longitude}`
     : null;
 
-/** "lun 10 nov, 7:30 p.m.": en español aunque la app no registre el idioma. */
+/** "lun 10 nov, 19:30": en español y en 24 horas, aunque la app no registre el idioma. */
 export const formatScheduled = (iso: string): string =>
   new Intl.DateTimeFormat('es-MX', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-    hour: 'numeric',
+    hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
   }).format(new Date(iso));

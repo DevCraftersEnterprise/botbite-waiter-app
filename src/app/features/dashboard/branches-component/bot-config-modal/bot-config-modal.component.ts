@@ -23,13 +23,18 @@ import {
   BotKey,
   UpdateBotConfig,
 } from '../../../../core/services/types/bot.types';
+import { HoursEditorComponent } from '../../../../shared/components/hours-editor/hours-editor';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
+import { TimeInputComponent } from '../../../../shared/components/time-input/time-input';
 import {
   FieldErrors,
   formErrorSummary,
   toFormErrors,
 } from '../../../../shared/utils/api-errors.util';
 import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/coordinates.util';
+import { HoursForm, hoursProblems } from '../../../../shared/utils/hours.util';
+import { isTime } from '../../../../shared/utils/time.util';
+import { timezoneLabel } from '../../../../shared/utils/timezones.util';
 
 interface BotConfigForm {
   /** Lo que va después del prefijo del restaurante. */
@@ -45,8 +50,12 @@ interface BotConfigForm {
   sessionHours: number;
   postSaleHours: number;
   maxRecommendations: number;
-  timezone: string;
+  /** "Cierre del día": no es el horario del mesero. */
   dailyCloseTime: string;
+  /** Horario del mesero. Vacío: atiende siempre. */
+  hours: HoursForm[];
+  /** Comisión de BotBite en los pagos del mesero. Solo la cambia un admin. */
+  commissionPct: number;
   surveyUrl: string;
   features: BotFeatures;
 }
@@ -57,7 +66,6 @@ type TextField =
   | 'botBaseUrl'
   | 'coordinates'
   | 'validTables'
-  | 'timezone'
   | 'dailyCloseTime'
   | 'surveyUrl';
 
@@ -66,7 +74,8 @@ type NumberField =
   | 'qrCodeMinutes'
   | 'sessionHours'
   | 'postSaleHours'
-  | 'maxRecommendations';
+  | 'maxRecommendations'
+  | 'commissionPct';
 
 /** Campos que la API puede rechazar; los errores se muestran junto a ellos. */
 const API_FIELDS = [
@@ -81,13 +90,14 @@ const API_FIELDS = [
   'sessionHours',
   'postSaleHours',
   'maxRecommendations',
-  'timezone',
   'dailyCloseTime',
+  'hours',
+  'commissionPct',
   'surveyUrl',
 ] as const;
 
 /** Qué campo del formulario muestra el error de cada campo de la API. */
-const FORM_FIELD: Partial<Record<(typeof API_FIELDS)[number], TextField | NumberField>> = {
+const FORM_FIELD: Partial<Record<(typeof API_FIELDS)[number], TextField | NumberField | 'hours'>> = {
   slug: 'slugSuffix',
   latitude: 'coordinates',
   longitude: 'coordinates',
@@ -128,15 +138,16 @@ const toForm = (config: BotConfig, restaurantSlug: string | null): BotConfigForm
   sessionHours: config.sessionHours,
   postSaleHours: config.postSaleHours,
   maxRecommendations: config.maxRecommendations,
-  timezone: config.timezone,
   dailyCloseTime: config.dailyCloseTime,
+  hours: (config.hours ?? []).map((window) => ({ ...window, days: [...window.days] })),
+  commissionPct: config.commissionPct ?? 0,
   surveyUrl: config.surveyUrl ?? '',
   features: config.features,
 });
 
 @Component({
   selector: 'app-bot-config-modal',
-  imports: [DatePipe, LucideAngularModule, ModalComponent],
+  imports: [DatePipe, HoursEditorComponent, LucideAngularModule, ModalComponent, TimeInputComponent],
   templateUrl: './bot-config-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -155,6 +166,8 @@ export class BotConfigModalComponent {
   protected readonly features = FEATURES;
 
   protected readonly form = signal<BotConfigForm | null>(null);
+  /** Se cambia en los datos de la sucursal: aquí solo se muestra. */
+  protected readonly timezone = signal('');
   /** El slug como está guardado: solo se manda si cambia. */
   private readonly savedSlug = signal('');
   protected readonly loading = signal(false);
@@ -199,13 +212,26 @@ export class BotConfigModalComponent {
 
   protected readonly coordinatesInvalid = computed(() => this.parsedCoordinates() === 'invalid');
 
+  protected readonly timezoneName = computed(() => timezoneLabel(this.timezone()));
+
+  /** Lo que impide guardar el horario o el cierre del día, en español. */
+  protected readonly timeProblems = computed(() => {
+    const f = this.form();
+    if (!f) return [];
+    return [
+      ...(isTime(f.dailyCloseTime)
+        ? []
+        : ['El cierre del día necesita una hora en formato de 24 horas, como 23:30.']),
+      ...hoursProblems(f.hours, (index) => `El horario ${index + 1}`),
+    ];
+  });
+
   protected readonly canSave = computed(() => {
     const f = this.form();
     return (
       !!f &&
       !this.loading() &&
-      !!f.dailyCloseTime &&
-      !!f.timezone.trim() &&
+      this.timeProblems().length === 0 &&
       !!f.slugSuffix.trim() &&
       !this.coordinatesMissing() &&
       !this.coordinatesInvalid()
@@ -244,6 +270,7 @@ export class BotConfigModalComponent {
       )
       .subscribe((config) => {
         this.savedSlug.set(config.slug);
+        this.timezone.set(config.timezone);
         this.form.set(toForm(config, this.restaurantSlug()));
       });
 
@@ -263,7 +290,7 @@ export class BotConfigModalComponent {
       .subscribe((keys) => this.keys.set(keys));
   }
 
-  protected errorOf(field: TextField | NumberField): string | null {
+  protected errorOf(field: TextField | NumberField | 'hours'): string | null {
     return this.fieldErrors()[field] ?? null;
   }
 
@@ -282,6 +309,14 @@ export class BotConfigModalComponent {
     this.patchForm({ [key]: Number(value) }, key);
   }
 
+  protected updateDailyClose(value: string): void {
+    this.patchForm({ dailyCloseTime: value }, 'dailyCloseTime');
+  }
+
+  protected updateHours(hours: HoursForm[]): void {
+    this.patchForm({ hours }, 'hours');
+  }
+
   protected updateVerifyLocation(ev: Event): void {
     this.patchForm({ verifyLocation: (ev.target as HTMLInputElement).checked }, 'coordinates');
   }
@@ -296,7 +331,10 @@ export class BotConfigModalComponent {
     if (current) this.patchForm({ features: { ...current.features, [key]: checked } });
   }
 
-  private patchForm(changes: Partial<BotConfigForm>, field?: TextField | NumberField): void {
+  private patchForm(
+    changes: Partial<BotConfigForm>,
+    field?: TextField | NumberField | 'hours'
+  ): void {
     this.form.update((f) => (f ? { ...f, ...changes } : f));
     if (field && this.fieldErrors()[field]) {
       this.fieldErrors.update((errors) => {
@@ -355,8 +393,12 @@ export class BotConfigModalComponent {
       sessionHours: f.sessionHours,
       postSaleHours: f.postSaleHours,
       maxRecommendations: f.maxRecommendations,
-      timezone: f.timezone.trim(),
       dailyCloseTime: f.dailyCloseTime,
+      hours: f.hours.map((window) => ({
+        days: [...window.days],
+        opens: window.opens,
+        closes: window.closes,
+      })),
       surveyUrl: f.surveyUrl.trim() || null,
     };
 
@@ -370,6 +412,7 @@ export class BotConfigModalComponent {
       whatsappPhoneNumberId: f.whatsappPhoneNumberId.trim() || null,
       botBaseUrl: f.botBaseUrl.trim() || null,
       features: f.features,
+      commissionPct: f.commissionPct,
     };
   }
 

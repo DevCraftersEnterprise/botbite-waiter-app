@@ -27,10 +27,23 @@ export interface BotConfig {
   sessionHours: number;
   postSaleHours: number;
   maxRecommendations: number;
+  /** De la sucursal: se cambia en los datos de la sucursal. */
   timezone: string;
+  /** "Cierre del día" del mesero. */
   dailyCloseTime: string;
+  /** Horario del mesero. Vacío: atiende siempre. */
+  hours: BotHours[];
+  /** Comisión de BotBite en los pagos del mesero. Solo la cambia un admin. */
+  commissionPct: number;
   surveyUrl: string | null;
   features: BotFeatures;
+}
+
+/** Ventana de horario: 0 = domingo; si `closes` es menor que `opens`, cierra al día siguiente. */
+export interface BotHours {
+  days: number[];
+  opens: string;
+  closes: string;
 }
 
 export type UpdateBotConfig = Partial<Omit<BotConfig, 'id' | 'name'>>;

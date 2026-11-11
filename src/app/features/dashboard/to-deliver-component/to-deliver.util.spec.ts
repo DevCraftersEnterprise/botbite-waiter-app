@@ -44,10 +44,12 @@ describe('to deliver utils', () => {
     expect(deliveryMapUrl(null)).toBeNull();
   });
 
-  it('writes the scheduled time in Spanish', () => {
+  it('writes the scheduled time in Spanish and in 24-hour format', () => {
     const text = formatScheduled('2026-11-10T19:30:00');
     expect(text).toContain('10');
     expect(text).toMatch(/nov/);
-    expect(text).toMatch(/7:30/);
+    expect(text).toContain('19:30');
+    expect(text).not.toMatch(/[ap]\.?\s?m/i);
+    expect(formatScheduled('2026-11-10T07:05:00')).toContain('07:05');
   });
 });

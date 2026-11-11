@@ -31,6 +31,7 @@ import {
 } from '../../../shared/utils/api-errors.util';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
+import { DEFAULT_TIMEZONE, timezoneOptions } from '../../../shared/utils/timezones.util';
 
 /** Campos del formulario de sucursal que la API puede rechazar. */
 const BRANCH_FIELDS = [
@@ -39,6 +40,7 @@ const BRANCH_FIELDS = [
   'phoneNumberAssistant',
   'phoneNumberReception',
   'surveyUrl',
+  'timezone',
 ] as const;
 
 @Component({
@@ -66,6 +68,8 @@ export class BranchesComponent {
   readonly saving = signal(false);
   readonly loading = signal(false);
   readonly mode = signal<Mode>(null);
+  /** La zona que mostró el formulario al abrir la edición: solo se manda si el usuario la cambia. */
+  private readonly loadedTimezone = signal<string | null>(null);
   readonly confirming = signal(false);
   private confirmEnable = signal<boolean | null>(null);
   readonly target = signal<Branch | null>(null);
@@ -82,7 +86,11 @@ export class BranchesComponent {
     phoneNumberReception: '',
     surveyUrl: '',
     isActive: true,
+    timezone: DEFAULT_TIMEZONE,
   });
+
+  /** Las zonas de México, más la guardada si no está en la lista. */
+  protected readonly timezones = computed(() => timezoneOptions(this.form().timezone));
 
   /** Lo que rechazó la API, junto a su campo. */
   readonly fieldErrors = signal<FieldErrors>({});
@@ -239,10 +247,12 @@ export class BranchesComponent {
       phoneNumberReception: '',
       isActive: true,
       surveyUrl: '',
+      timezone: DEFAULT_TIMEZONE,
     });
   }
 
   openEdit(branch: Branch): void {
+    this.loadedTimezone.set(branch.timezone ?? DEFAULT_TIMEZONE);
     this.fieldErrors.set({});
     this.mode.set('edit');
     this.form.set({
@@ -253,6 +263,7 @@ export class BranchesComponent {
       phoneNumberReception: branch.phoneNumberReception ?? '',
       isActive: branch.isActive,
       surveyUrl: branch.surveyUrl ?? '',
+      timezone: branch.timezone ?? DEFAULT_TIMEZONE,
     });
   }
 
@@ -266,6 +277,7 @@ export class BranchesComponent {
       phoneNumberReception: '',
       isActive: true,
       surveyUrl: '',
+      timezone: DEFAULT_TIMEZONE,
     });
   }
 
@@ -287,6 +299,10 @@ export class BranchesComponent {
       phoneNumberAssistant: data.phoneNumberAssistant?.trim() || null,
       phoneNumberReception: data.phoneNumberReception?.trim() || null,
       surveyUrl: data.surveyUrl?.trim() || null,
+      // Solo si cambió (o al crear): así un dato que no llegó no se sobrescribe.
+      ...(this.mode() === 'create' || data.timezone !== this.loadedTimezone()
+        ? { timezone: data.timezone }
+        : {}),
     };
 
     const op =

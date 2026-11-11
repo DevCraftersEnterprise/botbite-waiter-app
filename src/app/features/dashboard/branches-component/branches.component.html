@@ -369,6 +369,28 @@
         <p class="text-xs text-neutral-500">Donde llegan las comandas y los avisos, con + y lada.</p>
       </div>
       <div class="md:col-span-2">
+        <label for="btimezone" class="text-sm font-medium">Zona horaria</label>
+        <select
+          id="btimezone"
+          class="w-full rounded-xl border px-3 py-2"
+          [class]="fieldClass('timezone')"
+          [value]="form().timezone"
+          (change)="updateForm('timezone', $event)"
+        >
+          @for (zone of timezones(); track zone.value) {
+            <option [value]="zone.value" [selected]="zone.value === form().timezone">
+              {{ zone.label }}
+            </option>
+          }
+        </select>
+        @if (fieldErrors()['timezone']; as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+        <p class="text-xs text-neutral-500">
+          La usan el mesero y los pedidos para sus horarios, y el panel para saber qué es "hoy".
+        </p>
+      </div>
+      <div class="md:col-span-2">
         <label for="surveyUrl" class="text-sm font-medium">URL Encuesta</label>
         <input
           id="surveyUrl"
