@@ -18,8 +18,13 @@ import { IconsService } from '../../../../core/services/icons.service';
 import { Branch } from '../../../../core/services/types/branches.types';
 import { OrderingScheduling } from '../../../../core/services/types/ordering.types';
 import { HoursEditorComponent } from '../../../../shared/components/hours-editor/hours-editor';
+import {
+  LocationMapComponent,
+  MapPoint,
+} from '../../../../shared/components/location-map/location-map';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
 import { TimeInputComponent } from '../../../../shared/components/time-input/time-input';
+import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/coordinates.util';
 import {
   FieldErrors,
   formErrorSummary,
@@ -65,7 +70,13 @@ const API_FIELDS = [
 /** Ajustes del número de pedidos (recoger y domicilio) de una sucursal. */
 @Component({
   selector: 'app-ordering-modal',
-  imports: [HoursEditorComponent, LucideAngularModule, ModalComponent, TimeInputComponent],
+  imports: [
+    HoursEditorComponent,
+    LocationMapComponent,
+    LucideAngularModule,
+    ModalComponent,
+    TimeInputComponent,
+  ],
   templateUrl: './ordering-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -169,6 +180,7 @@ export class OrderingModalComponent {
   }
 
   protected removeZone(index: number): void {
+    this.zoneMapOpen.set(null);
     const f = this.form();
     if (f) this.patch({ zones: f.zones.filter((_, i) => i !== index) });
   }
@@ -200,6 +212,31 @@ export class OrderingModalComponent {
 
   protected mapUrl(zone: ZoneForm): string | null {
     return zoneMapUrl(zone);
+  }
+
+  /** La zona cuyo mapa está abierto: uno a la vez, para no cargar varios. */
+  protected readonly zoneMapOpen = signal<number | null>(null);
+
+  /** La sucursal, como referencia en el mapa de cada zona. */
+  protected readonly branchPoint = computed((): MapPoint | null => {
+    const branch = this.branch();
+    const latitude = branch?.latitude == null ? NaN : Number(branch.latitude);
+    const longitude = branch?.longitude == null ? NaN : Number(branch.longitude);
+    return Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude, longitude } : null;
+  });
+
+  protected zonePoint(zone: ZoneForm): MapPoint | null {
+    const coordinates = parseCoordinates(zone.coordinates);
+    return coordinates && coordinates !== 'invalid' ? coordinates : null;
+  }
+
+  protected toggleZoneMap(index: number): void {
+    this.zoneMapOpen.update((open) => (open === index ? null : index));
+  }
+
+  /** Un clic en el mapa llena el centro de la zona. */
+  protected setZoneCenter(index: number, point: MapPoint): void {
+    this.patchZone(index, { coordinates: formatCoordinates(point.latitude, point.longitude) });
   }
 
   // Horario

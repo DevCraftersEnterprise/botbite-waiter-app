@@ -43,7 +43,8 @@
               (input)="updateText('coordinates', $event)"
             />
             <p class="text-xs text-neutral-500">
-              Pégalas como las copia Google Maps (latitud, longitud). Se guardan con 6 decimales.
+              Márcalas en el mapa o pégalas como las copia Google Maps (latitud, longitud). Se
+              guardan con 6 decimales.
             </p>
           </div>
           <div class="space-y-1">
@@ -62,6 +63,14 @@
             }
           </div>
         </div>
+        <app-location-map
+          label="la sucursal"
+          testId="branch-map"
+          [latitude]="mapPoint()?.latitude ?? null"
+          [longitude]="mapPoint()?.longitude ?? null"
+          [radiusMeters]="f.geofenceMeters"
+          (pointChange)="setCoordinates($event)"
+        />
         <div class="flex items-center gap-2">
           <input
             id="botVerifyLocation"
