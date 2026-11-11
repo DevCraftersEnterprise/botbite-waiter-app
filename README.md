@@ -89,6 +89,26 @@ src/app/
   - a los 10 segundos sin conexión, la barra de arriba muestra "Sin conexión en vivo" en rojo, y cada 30 segundos consulta `GET /health`: si la API contesta, la pantalla recarga;
   - al reconectar, vuelve a unirse a la sala y la pantalla recarga, porque lo que pasó en el corte no se repite por el socket (`getResyncs()`; `getOrderUpdates()` ya lo incluye).
 
+## Avisos en todo el panel
+
+`AlertsService` los da en cualquier pantalla, con la sucursal elegida arriba. Lo arranca el layout del panel, que se une a la sala de la sucursal. Por eso las pantallas no salen de la sala al cerrarse.
+
+- **Numeritos del menú:**
+  - Notificaciones muestra los avisos sin leer.
+  - "Para entregar" muestra los pedidos en "Pagado", solo si la sucursal tiene pedidos activos.
+  - En el celular, el menú está oculto y su botón muestra un punto rojo.
+- **Título de la pestaña:** "(N) BotBite", con N avisos sin leer. Si hay un pedido por atender y la pestaña no está a la vista, alterna con "¡Pedido nuevo!".
+- **Avisos nuevos:** cada uno muestra "Nueva notificación" y suena un tono corto.
+  - Un aviso que vuelve a "no leído" no cuenta como nuevo.
+  - Si el aviso es de un pedido pagado, en vez del tono suena el del pedido.
+- **Pedido pagado:**
+  - Tiene un sonido propio, más largo, que se repite cada 30 segundos mientras haya pedidos por atender en "Pagado".
+  - Se calla al pasarlo a Preparar, Va en camino o Ya está listo, o al cancelarlo.
+  - Un programado suena al pagarse y vuelve a sonar `reminderMinutes` antes de su hora (30 por defecto), con la misma repetición.
+- **Sonido** (`AlertSoundService`):
+  - El navegador no deja sonar hasta el primer clic o tecla en la página. Mientras tanto, la barra de arriba muestra "Activar sonido".
+  - El botón de la bocina silencia ese equipo. Se recuerda en ese navegador (`botbite.sound-muted`).
+
 ## Funciones por pantalla
 
 | Pantalla | Rol mínimo | Qué hace |
@@ -103,7 +123,7 @@ src/app/
 | Órdenes | user | Mesas con cuenta abierta y sus rondas, en vivo. El personal mueve las comandas, cobra las cuentas y abre sus propias cuentas |
 | Cobros | user | Pagos en línea y facturas de un día de la sucursal, en vivo para el día de hoy. Un pedido pagado que se canceló sale "Por reembolsar" y no cuenta como cobrado; los pedidos dicen si son para recoger o a domicilio |
 | Clientes | client | Clientes del restaurante: visitas, consumo, monedero, promociones, estado y favoritos, con filtros, orden y totales. El teléfono sale oculto; verlo completo y exportar a CSV quedan registrados, y la exportación se activa desde la API |
-| Notificaciones | user | Avisos de caja en tiempo real, por tipo; lo más viejo arriba en "No leídas", con un botón para invertir el orden |
+| Notificaciones | user | Avisos de caja en tiempo real, por tipo; lo más viejo arriba en "No leídas", con un botón para invertir el orden. El aviso y el sonido de cada uno nuevo salen en cualquier pantalla (ver "Avisos en todo el panel") |
 | Para entregar | user | Pedidos de recoger y domicilio pagados que faltan por entregar, en tarjetas por estado con los botones de caja (Preparar, Va en camino o Ya está listo, Entregado), dirección, teléfono y el interruptor "Recibiendo pedidos". El dueño o un admin puede cancelar un pedido pagado: el reembolso en Mercado Pago se hace a mano |
 
 ### Mesero digital
