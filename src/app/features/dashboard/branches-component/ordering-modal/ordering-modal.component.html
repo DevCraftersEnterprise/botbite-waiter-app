@@ -308,7 +308,15 @@
                     (valueChange)="updateZoneTime(i, 'to', $event)"
                   />
                 </div>
-                <div class="ml-auto flex gap-2">
+                <div class="ml-auto flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="btn-small"
+                    [attr.aria-expanded]="zoneMapOpen() === i"
+                    (click)="toggleZoneMap(i)"
+                  >
+                    {{ zoneMapOpen() === i ? 'Cerrar mapa' : 'Marcar en el mapa' }}
+                  </button>
                   @if (mapUrl(zone); as url) {
                     <a class="btn-small" [href]="url" target="_blank" rel="noopener">Ver en mapa</a>
                   }
@@ -317,6 +325,17 @@
                   </button>
                 </div>
               </div>
+              @if (zoneMapOpen() === i) {
+                <app-location-map
+                  [label]="'la zona ' + (i + 1)"
+                  [testId]="'zone-map-' + i"
+                  [latitude]="zonePoint(zone)?.latitude ?? null"
+                  [longitude]="zonePoint(zone)?.longitude ?? null"
+                  [radiusMeters]="zone.radiusMeters"
+                  [reference]="branchPoint()"
+                  (pointChange)="setZoneCenter(i, $event)"
+                />
+              }
             </div>
           } @empty {
             <p class="text-sm text-neutral-500">Se entrega en toda el área de envío.</p>

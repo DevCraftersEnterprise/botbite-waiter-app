@@ -24,6 +24,10 @@ import {
   UpdateBotConfig,
 } from '../../../../core/services/types/bot.types';
 import { HoursEditorComponent } from '../../../../shared/components/hours-editor/hours-editor';
+import {
+  LocationMapComponent,
+  MapPoint,
+} from '../../../../shared/components/location-map/location-map';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
 import { TimeInputComponent } from '../../../../shared/components/time-input/time-input';
 import {
@@ -147,7 +151,14 @@ const toForm = (config: BotConfig, restaurantSlug: string | null): BotConfigForm
 
 @Component({
   selector: 'app-bot-config-modal',
-  imports: [DatePipe, HoursEditorComponent, LucideAngularModule, ModalComponent, TimeInputComponent],
+  imports: [
+    DatePipe,
+    HoursEditorComponent,
+    LocationMapComponent,
+    LucideAngularModule,
+    ModalComponent,
+    TimeInputComponent,
+  ],
   templateUrl: './bot-config-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -211,6 +222,12 @@ export class BotConfigModalComponent {
   });
 
   protected readonly coordinatesInvalid = computed(() => this.parsedCoordinates() === 'invalid');
+
+  /** El punto del mapa: solo con coordenadas que se entienden. */
+  protected readonly mapPoint = computed(() => {
+    const coordinates = this.parsedCoordinates();
+    return coordinates && coordinates !== 'invalid' ? coordinates : null;
+  });
 
   protected readonly timezoneName = computed(() => timezoneLabel(this.timezone()));
 
@@ -307,6 +324,14 @@ export class BotConfigModalComponent {
   protected updateNumber(key: NumberField, ev: Event): void {
     const { value } = ev.target as HTMLInputElement;
     this.patchForm({ [key]: Number(value) }, key);
+  }
+
+  /** Un clic en el mapa llena las coordenadas, igual que si se pegaran. */
+  protected setCoordinates(point: MapPoint): void {
+    this.patchForm(
+      { coordinates: formatCoordinates(point.latitude, point.longitude) },
+      'coordinates'
+    );
   }
 
   protected updateDailyClose(value: string): void {

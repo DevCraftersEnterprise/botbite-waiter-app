@@ -311,3 +311,25 @@ body {
   box-shadow: none !important;
   border-radius: 12px !important;
 }
+
+/* Punto del mapa de ubicación (app-location-map): sin las imágenes de Leaflet. */
+.map-point {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 9999px;
+  background: #dc2626;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+  cursor: grab;
+}
+
+/* La sucursal, como referencia en el mapa de una zona. */
+.map-point-reference {
+  margin: 3px;
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
+  background: #111;
+  cursor: default;
+}
