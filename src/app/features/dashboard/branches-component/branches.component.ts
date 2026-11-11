@@ -68,6 +68,8 @@ export class BranchesComponent {
   readonly saving = signal(false);
   readonly loading = signal(false);
   readonly mode = signal<Mode>(null);
+  /** La zona que mostró el formulario al abrir la edición: solo se manda si el usuario la cambia. */
+  private readonly loadedTimezone = signal<string | null>(null);
   readonly confirming = signal(false);
   private confirmEnable = signal<boolean | null>(null);
   readonly target = signal<Branch | null>(null);
@@ -250,6 +252,7 @@ export class BranchesComponent {
   }
 
   openEdit(branch: Branch): void {
+    this.loadedTimezone.set(branch.timezone ?? DEFAULT_TIMEZONE);
     this.fieldErrors.set({});
     this.mode.set('edit');
     this.form.set({
@@ -296,7 +299,10 @@ export class BranchesComponent {
       phoneNumberAssistant: data.phoneNumberAssistant?.trim() || null,
       phoneNumberReception: data.phoneNumberReception?.trim() || null,
       surveyUrl: data.surveyUrl?.trim() || null,
-      timezone: data.timezone,
+      // Solo si cambió (o al crear): así un dato que no llegó no se sobrescribe.
+      ...(this.mode() === 'create' || data.timezone !== this.loadedTimezone()
+        ? { timezone: data.timezone }
+        : {}),
     };
 
     const op =
