@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   inject,
+  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -12,6 +13,8 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { LucideAngularModule, LucideIconData } from 'lucide-angular';
 import { catchError, concatMap, EMPTY } from 'rxjs';
 import { hasRole } from '../../../core/guards/roles.guard';
+import { AlertSoundService } from '../../../core/services/alert-sound.service';
+import { AlertsService } from '../../../core/services/alerts.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { IconsService } from '../../../core/services/icons.service';
 import { OrgService } from '../../../core/services/org.service';
@@ -40,13 +43,16 @@ type NavItem = {
   templateUrl: './shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ShellComponent implements OnInit {
+export class ShellComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   protected authService = inject(AuthService);
   protected orgService = inject(OrgService);
   protected readonly iconsService = inject(IconsService);
   /** La conexión en vivo es de todo el panel: el aviso sale en cualquier pantalla. */
   protected readonly socketService = inject(SocketService);
+  /** Numeritos, título y sonidos de la sucursal elegida, en cualquier pantalla. */
+  protected readonly alerts = inject(AlertsService);
+  protected readonly sound = inject(AlertSoundService);
 
   open = signal(false);
 
@@ -140,6 +146,18 @@ export class ShellComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeUserData();
+    if (this.authService.isAuthenticated()) this.alerts.start();
+  }
+
+  ngOnDestroy(): void {
+    this.alerts.stop();
+  }
+
+  /** El numerito de cada opción del menú (decisión 5). */
+  protected badgeFor(to: string): number {
+    if (to === '/dashboard/notifications') return this.alerts.unread();
+    if (to === '/dashboard/to-deliver') return this.alerts.paid();
+    return 0;
   }
 
   private initializeUserData(): void {
@@ -187,6 +205,7 @@ export class ShellComponent implements OnInit {
   }
 
   logout(): void {
+    this.alerts.stop();
     this.authService.logout();
     this.router.navigateByUrl('/login');
   }

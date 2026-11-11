@@ -45,6 +45,8 @@ import {
   Bell,
   MessageCircle,
   WifiOff,
+  Volume2,
+  VolumeX,
 } from 'lucide-angular';
 
 @Injectable({
@@ -53,6 +55,8 @@ import {
 export class IconsService {
   readonly logout = LogOut;
   readonly offline = WifiOff;
+  readonly soundOn = Volume2;
+  readonly soundOff = VolumeX;
   readonly power = Power;
   readonly menu = Menu;
   readonly house = House;

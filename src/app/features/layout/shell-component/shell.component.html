@@ -27,6 +27,14 @@
             <div class="flex items-start gap-3">
               <lucide-icon [img]="item.icon" size="18" aria-hidden="true"></lucide-icon>
               <span class="align-middle">{{ item.label }}</span>
+              @if (badgeFor(item.to); as count) {
+                <span
+                  class="ml-auto min-w-5 rounded-full bg-red-600 px-1.5 text-center text-xs leading-5 font-semibold text-white"
+                  data-testid="nav-badge"
+                  [attr.aria-label]="count + ' pendientes'"
+                  >{{ count }}</span
+                >
+              }
             </div>
           </a>
         }
@@ -65,12 +73,22 @@
       <div class="flex h-14 min-w-0 items-center justify-between gap-3 px-4">
         <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <button
-            class="btn-secondary shrink-0 lg:hidden"
+            class="btn-secondary relative shrink-0 lg:hidden"
             (click)="toggle()"
-            aria-label="Abrir menú de navegación"
+            [attr.aria-label]="
+              alerts.hasBadges() ? 'Abrir menú de navegación (hay avisos)' : 'Abrir menú de navegación'
+            "
             aria-expanded="{{ open() }}"
           >
             <lucide-icon [img]="iconsService.menu" size="18" aria-hidden="true"></lucide-icon>
+            <!-- En el celular el menú está oculto: el punto avisa que hay numeritos. -->
+            @if (alerts.hasBadges()) {
+              <span
+                class="absolute -top-1 -right-1 size-2.5 rounded-full bg-red-600 ring-2 ring-white"
+                data-testid="menu-dot"
+                aria-hidden="true"
+              ></span>
+            }
           </button>
 
           <!-- Selector de restaurantes -->
@@ -137,6 +155,34 @@
 
         <!-- USUARIO ACTIVO -->
         <div class="flex shrink-0 items-center gap-2 sm:gap-4">
+          <!-- Sonido (decisión 8): el navegador no deja sonar hasta el primer clic. -->
+          @if (sound.blocked() && !sound.muted()) {
+            <button
+              type="button"
+              class="flex shrink-0 items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-sm font-medium text-amber-900 hover:bg-amber-100"
+              data-testid="unlock-sound"
+              (click)="sound.unlock()"
+            >
+              <lucide-icon [img]="iconsService.soundOn" size="16" aria-hidden="true"></lucide-icon>
+              <span>Activar sonido</span>
+            </button>
+          }
+          <button
+            type="button"
+            class="btn-icon shrink-0"
+            data-testid="mute-sound"
+            [attr.aria-pressed]="sound.muted()"
+            [attr.aria-label]="sound.muted() ? 'Quitar el silencio en este equipo' : 'Silenciar este equipo'"
+            [title]="sound.muted() ? 'Silenciado en este equipo' : 'Silenciar este equipo'"
+            (click)="sound.toggleMuted()"
+          >
+            <lucide-icon
+              [img]="sound.muted() ? iconsService.soundOff : iconsService.soundOn"
+              size="18"
+              aria-hidden="true"
+            ></lucide-icon>
+          </button>
+
           <div class="flex min-w-0 items-center gap-2">
             <!-- Email -->
             <span

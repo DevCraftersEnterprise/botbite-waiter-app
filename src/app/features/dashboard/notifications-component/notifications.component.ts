@@ -104,7 +104,8 @@ export class NotificationsComponent implements OnDestroy {
     this.notificationSubscription = this.socketService
       .getNotificationUpdates()
       .subscribe((update) => {
-        this.handleNotificationUpdate(update.notification, { announce: true });
+        // El aviso "Nueva notificación" y el sonido los da AlertsService en todo el panel.
+        this.handleNotificationUpdate(update.notification);
       });
 
     // Lo que llegó mientras no había conexión en vivo no se repite: se vuelve a pedir.
@@ -145,23 +146,6 @@ export class NotificationsComponent implements OnDestroy {
     this.typeFilter.set((event.target as HTMLSelectElement).value);
   }
 
-  /** Avisa con un tono: caja no siempre está viendo la pantalla. */
-  private playAlert(): void {
-    try {
-      const audio = new AudioContext();
-      const oscillator = audio.createOscillator();
-      const gain = audio.createGain();
-
-      oscillator.frequency.value = 880;
-      gain.gain.value = 0.05;
-      oscillator.connect(gain).connect(audio.destination);
-      oscillator.start();
-      oscillator.stop(audio.currentTime + 0.2);
-      oscillator.onended = () => void audio.close();
-    } catch {
-      // El navegador puede bloquear el audio hasta que el usuario interactúe.
-    }
-  }
 
   /** `quiet`: recarga sin el indicador de carga ni el aviso de error. */
   private loadNotifications(branchId: string, { quiet = false }: { quiet?: boolean } = {}): void {
@@ -180,15 +164,8 @@ export class NotificationsComponent implements OnDestroy {
     });
   }
 
-  /**
-   * Pone el aviso en la lista que le toca. Solo suena y muestra "Nueva
-   * notificación" con `announce` (lo que llega en vivo): deshacer un clic que
-   * falló o marcar como no leída no es un aviso nuevo.
-   */
-  private handleNotificationUpdate(
-    notification: CashierNotification,
-    { announce = false }: { announce?: boolean } = {}
-  ): void {
+  /** Pone el aviso en la lista que le toca. */
+  private handleNotificationUpdate(notification: CashierNotification): void {
     if (notification.isActive) {
       const activeList = this.activeNotifications();
       const index = activeList.findIndex(n => n.id === notification.id);
@@ -199,10 +176,6 @@ export class NotificationsComponent implements OnDestroy {
         this.activeNotifications.set(updated);
       } else {
         this.activeNotifications.set([notification, ...activeList]);
-        if (announce) {
-          this.toastrService.info(notification.message, 'Nueva notificación');
-          this.playAlert();
-        }
       }
 
       this.removeFromInactive(notification.id);
@@ -261,10 +234,7 @@ export class NotificationsComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    const branchId = this.orgService.selectedBranchId();
-    if (branchId) {
-      this.socketService.leaveBranch(branchId);
-    }
+    // No sale de la sala de la sucursal: los avisos de todo el panel la siguen usando.
     this.notificationSubscription?.unsubscribe();
     this.resyncSubscription?.unsubscribe();
   }
