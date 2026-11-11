@@ -9,6 +9,8 @@ export interface Branch {
   phoneNumberReception?: string | null;
   qrUrl?: string | null;
   surveyUrl?: string | null;
+  /** La usan el mesero y los pedidos. */
+  timezone?: string;
   restaurantId: string;
   /** Si el bot revisa que el comensal esté en el restaurante. */
   verifyLocation?: boolean;

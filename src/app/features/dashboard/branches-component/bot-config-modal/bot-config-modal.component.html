@@ -99,31 +99,26 @@
         <h3 class="text-sm font-semibold">Operación</h3>
         <div class="grid gap-3 md:grid-cols-3">
           <div class="space-y-1">
-            <label for="botClose" class="text-sm font-medium">Hora de cierre</label>
-            <input
-              id="botClose"
-              class="input"
-              [class]="invalidClass('dailyCloseTime')"
-              type="time"
+            <label for="botClose" class="text-sm font-medium">Cierre del día</label>
+            <app-time-input
+              inputId="botClose"
               [value]="f.dailyCloseTime"
-              (input)="updateText('dailyCloseTime', $event)"
+              [invalid]="!!errorOf('dailyCloseTime')"
+              (valueChange)="updateDailyClose($event)"
             />
+            <p class="text-xs text-neutral-500">
+              A esta hora el mesero cierra las cuentas que quedaron abiertas. No es su horario.
+            </p>
             @if (errorOf('dailyCloseTime'); as message) {
               <p class="text-xs text-red-600">{{ message }}</p>
             }
           </div>
           <div class="space-y-1">
-            <label for="botTimezone" class="text-sm font-medium">Zona horaria</label>
-            <input
-              id="botTimezone"
-              class="input"
-              [class]="invalidClass('timezone')"
-              [value]="f.timezone"
-              (input)="updateText('timezone', $event)"
-            />
-            @if (errorOf('timezone'); as message) {
-              <p class="text-xs text-red-600">{{ message }}</p>
-            }
+            <span class="text-sm font-medium">Zona horaria</span>
+            <p class="py-2 text-sm" data-testid="bot-timezone">{{ timezoneName() }}</p>
+            <p class="text-xs text-neutral-500">
+              Es de la sucursal y la usan el mesero y los pedidos. Se cambia en Editar sucursal.
+            </p>
           </div>
           <div class="space-y-1">
             <label for="botQrMinutes" class="text-sm font-medium"
@@ -221,6 +216,64 @@
             <p class="text-xs text-red-600">{{ message }}</p>
           }
         </div>
+      </section>
+
+      <app-hours-editor
+        title="Horario del mesero"
+        idPrefix="botHours"
+        groupLabel="Días del horario del mesero"
+        [hours]="f.hours"
+        emptyText="Sin horario, el mesero atiende a cualquier hora."
+        (hoursChange)="updateHours($event)"
+      >
+        <p class="text-xs text-neutral-500">
+          Horas en formato de 24 horas. Agrega varios horarios para cortar a mediodía o para días
+          distintos; si cierra después de medianoche, pon la hora del día siguiente (de 13:00 a
+          01:00).
+        </p>
+        @if (errorOf('hours'); as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+      </app-hours-editor>
+
+      @if (timeProblems().length) {
+        <ul class="space-y-1 text-sm text-red-600" data-testid="bot-time-problems">
+          @for (problem of timeProblems(); track problem) {
+            <li>{{ problem }}</li>
+          }
+        </ul>
+      }
+
+      <section class="space-y-3">
+        <h3 class="text-sm font-semibold">Comisión de BotBite</h3>
+        @if (isAdmin()) {
+          <div class="space-y-1 md:w-1/3">
+            <label for="botCommission" class="text-sm font-medium">Comisión de BotBite (%)</label>
+            <input
+              id="botCommission"
+              class="input"
+              [class]="invalidClass('commissionPct')"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              [value]="f.commissionPct"
+              (input)="updateNumber('commissionPct', $event)"
+            />
+            @if (errorOf('commissionPct'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
+          </div>
+          <p class="text-xs text-neutral-500">
+            Va dentro del pago de Mercado Pago, sobre lo que paga el cliente, propina incluida. 0:
+            sin comisión.
+          </p>
+        } @else {
+          <p class="text-sm" data-testid="bot-commission">
+            {{ f.commissionPct }} % sobre lo que paga el cliente
+          </p>
+          <p class="text-xs text-neutral-500">La comisión la administra BotBite.</p>
+        }
       </section>
 
       <section class="space-y-3">

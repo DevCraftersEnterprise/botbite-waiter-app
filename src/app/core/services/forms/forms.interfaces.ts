@@ -26,6 +26,7 @@ export interface BranchForm {
   phoneNumberReception?: string;
   isActive: boolean;
   surveyUrl: string;
+  timezone: string;
 }
 
 export interface ProductForm {
