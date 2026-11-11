@@ -93,6 +93,8 @@ src/app/
 
 `AlertsService` los da en cualquier pantalla, con la sucursal elegida arriba. Lo arranca el layout del panel, que se une a la sala de la sucursal. Por eso las pantallas no salen de la sala al cerrarse.
 
+No dependen del WhatsApp de caja (`phoneNumberReception`), que es opcional. Una sucursal sin ese número recibe los avisos solo en el portal, porque el bot no le escribe a caja. Tampoco dependen de que caja abra turno por WhatsApp.
+
 - **Numeritos del menú:**
   - Notificaciones muestra los avisos sin leer.
   - "Para entregar" muestra los pedidos en "Pagado", solo si la sucursal tiene pedidos activos.

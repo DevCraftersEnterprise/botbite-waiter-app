@@ -352,7 +352,9 @@
         </p>
       </div>
       <div class="md:col-span-2">
-        <label for="breception" class="text-sm font-medium">WhatsApp de caja</label>
+        <label for="breception" class="text-sm font-medium">
+          WhatsApp de caja <span class="font-normal text-neutral-500">(opcional)</span>
+        </label>
         <input
           id="breception"
           type="tel"
@@ -366,7 +368,10 @@
         @if (fieldErrors()['phoneNumberReception']; as message) {
           <p class="text-xs text-red-600">{{ message }}</p>
         }
-        <p class="text-xs text-neutral-500">Donde llegan las comandas y los avisos, con + y lada.</p>
+        <p class="text-xs text-neutral-500" data-testid="reception-help">
+          Con + y lada. Si lo tiene, el bot también le avisa a caja por WhatsApp. Vacío, los avisos
+          llegan solo al portal: Notificaciones, "Para entregar", el numerito y el sonido.
+        </p>
       </div>
       <div class="md:col-span-2">
         <label for="btimezone" class="text-sm font-medium">Zona horaria</label>
