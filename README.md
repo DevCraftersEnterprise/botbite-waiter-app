@@ -127,9 +127,19 @@ src/app/
 | Para entregar | user | Pedidos de recoger y domicilio pagados que faltan por entregar, en tarjetas por estado con los botones de caja (Preparar, Va en camino o Ya está listo, Entregado), dirección, teléfono y el interruptor "Recibiendo pedidos". El dueño o un admin puede cancelar un pedido pagado: el reembolso en Mercado Pago se hace a mano |
 
 ### Mesero digital
-En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp: ubicación y radio, hora de cierre, mesas válidas y encuesta.
+En **Sucursales → Mesero**, el dueño configura la operación del mesero de WhatsApp:
+- la ubicación y el radio;
+- el horario del mesero, con varias ventanas por día, que pueden cruzar la medianoche (sin horario, atiende siempre);
+- el "Cierre del día", que no es el horario: a esa hora el mesero cierra las cuentas que quedaron abiertas;
+- las mesas válidas y la encuesta.
 
-Un admin además administra lo que conecta con el servicio del mesero: el slug, el `phone_number_id` de Meta, la URL de los webhooks, las funciones contratadas y las llaves del bot. Cada llave se muestra una sola vez, al generarla.
+La zona horaria se muestra, pero se cambia en **Editar sucursal**, con la lista de zonas de México. Es de la sucursal: la usan el mesero, los pedidos y los reportes del panel.
+
+Un admin además administra:
+- lo que conecta con el servicio del mesero: el slug, el `phone_number_id` de Meta, la URL de los webhooks, las funciones contratadas y las llaves del bot (cada llave se muestra una sola vez, al generarla);
+- la comisión de BotBite del mesero (`commissionPct`), que va dentro del pago de Mercado Pago. El dueño la ve, pero no la cambia.
+
+**Horas:** todos los campos de hora del panel usan `app-time-input`, en 24 horas. El `input type="time"` del navegador sale con a.m. y p.m. en un Chrome en español. Se puede escribir "1930" o "19.30", y queda "19:30"; algo como "7:00 pm" se marca y no deja guardar. El editor de horarios (`app-hours-editor`) es el mismo en Mesero y en Pedidos.
 
 ### Pedidos (recoger y domicilio)
 En **Sucursales → Pedidos**, el dueño configura el número de pedidos, que es aparte del mesero: tipos (recoger y domicilio), tarifa de envío y distancia máxima, zonas sin entrega (círculos con días y horario, sin mapa por ahora), horario de pedidos, pedidos programados, tiempos y el interruptor "Recibiendo pedidos".

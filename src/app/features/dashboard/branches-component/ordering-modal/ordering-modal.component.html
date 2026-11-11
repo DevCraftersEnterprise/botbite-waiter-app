@@ -294,22 +294,18 @@
                 </div>
                 <div class="space-y-1">
                   <label [for]="'zoneFrom' + i" class="text-sm font-medium">Desde</label>
-                  <input
-                    [id]="'zoneFrom' + i"
-                    class="input"
-                    type="time"
+                  <app-time-input
+                    [inputId]="'zoneFrom' + i"
                     [value]="zone.from"
-                    (input)="updateZoneText(i, 'from', $event)"
+                    (valueChange)="updateZoneTime(i, 'from', $event)"
                   />
                 </div>
                 <div class="space-y-1">
                   <label [for]="'zoneTo' + i" class="text-sm font-medium">Hasta</label>
-                  <input
-                    [id]="'zoneTo' + i"
-                    class="input"
-                    type="time"
+                  <app-time-input
+                    [inputId]="'zoneTo' + i"
                     [value]="zone.to"
-                    (input)="updateZoneText(i, 'to', $event)"
+                    (valueChange)="updateZoneTime(i, 'to', $event)"
                   />
                 </div>
                 <div class="ml-auto flex gap-2">
@@ -326,8 +322,8 @@
             <p class="text-sm text-neutral-500">Se entrega en toda el área de envío.</p>
           }
           <p class="text-xs text-neutral-500">
-            Sin días marcados aplica todos los días, y sin horario, todo el día. El horario puede
-            cruzar la medianoche (de 21:00 a 06:00).
+            Sin días marcados aplica todos los días, y sin horario, todo el día. Las horas van en
+            formato de 24 horas y pueden cruzar la medianoche (de 21:00 a 06:00).
           </p>
           @if (errorOf('noDeliveryZones'); as message) {
             <p class="text-xs text-red-600">{{ message }}</p>
@@ -335,75 +331,22 @@
         </section>
       }
 
-      <section class="space-y-3">
-        <div class="flex items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold">Horario de pedidos</h3>
-          <button type="button" class="btn-small" (click)="addHours()">Agregar horario</button>
-        </div>
-        @for (window of f.hours; track $index; let i = $index) {
-          <div class="flex flex-wrap items-end gap-3 rounded-xl border border-black/10 p-3">
-            <div class="space-y-1">
-              <span class="text-sm font-medium">Días</span>
-              <div
-                class="flex gap-1"
-                role="group"
-                [attr.aria-label]="'Días del horario ' + (i + 1)"
-              >
-                @for (day of days; track day.value) {
-                  <button
-                    type="button"
-                    class="h-8 min-w-8 rounded-lg border px-1 text-xs"
-                    [class]="
-                      window.days.includes(day.value)
-                        ? 'border-black bg-black text-white'
-                        : 'border-black/20 bg-white'
-                    "
-                    [attr.aria-pressed]="window.days.includes(day.value)"
-                    [attr.aria-label]="day.name"
-                    (click)="toggleHoursDay(i, day.value)"
-                  >
-                    {{ day.label }}
-                  </button>
-                }
-              </div>
-            </div>
-            <div class="space-y-1">
-              <label [for]="'hoursOpens' + i" class="text-sm font-medium">Abre</label>
-              <input
-                [id]="'hoursOpens' + i"
-                class="input"
-                type="time"
-                [value]="window.opens"
-                (input)="updateHoursTime(i, 'opens', $event)"
-              />
-            </div>
-            <div class="space-y-1">
-              <label [for]="'hoursCloses' + i" class="text-sm font-medium">Cierra</label>
-              <input
-                [id]="'hoursCloses' + i"
-                class="input"
-                type="time"
-                [value]="window.closes"
-                (input)="updateHoursTime(i, 'closes', $event)"
-              />
-            </div>
-            <button type="button" class="btn-small-danger ml-auto" (click)="removeHours(i)">
-              Quitar
-            </button>
-          </div>
-        } @empty {
-          <p class="text-sm text-amber-700">
-            Sin horario, el bot no sabe cuándo tomar pedidos para ahora.
-          </p>
-        }
+      <app-hours-editor
+        title="Horario de pedidos"
+        [hours]="f.hours"
+        emptyText="Sin horario, el bot no sabe cuándo tomar pedidos para ahora."
+        emptyClass="text-amber-700"
+        (hoursChange)="updateHours($event)"
+      >
         <p class="text-xs text-neutral-500">
-          Es aparte de la hora de cierre del mesero. Agrega varios horarios para cortar a mediodía o
-          para días distintos; si cierra después de medianoche, pon la hora del día siguiente.
+          Es aparte del horario del mesero. Agrega varios horarios para cortar a mediodía o para
+          días distintos. Las horas van en formato de 24 horas; si cierra después de medianoche, pon
+          la hora del día siguiente (de 18:00 a 01:00).
         </p>
         @if (errorOf('hours'); as message) {
           <p class="text-xs text-red-600">{{ message }}</p>
         }
-      </section>
+      </app-hours-editor>
 
       <section class="space-y-3">
         <h3 class="text-sm font-semibold">Pedidos programados</h3>

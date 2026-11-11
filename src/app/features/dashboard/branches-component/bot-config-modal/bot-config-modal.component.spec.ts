@@ -54,6 +54,8 @@ describe('BotConfigModalComponent', () => {
     maxRecommendations: 3,
     timezone: 'America/Hermosillo',
     dailyCloseTime: '23:00',
+    hours: [{ days: [1, 2, 3, 4, 5, 6], opens: '13:00', closes: '01:00' }],
+    commissionPct: 0.5,
     surveyUrl: null,
     features: {
       interactiveMenu: true,
@@ -133,7 +135,7 @@ describe('BotConfigModalComponent', () => {
         {
           message: [
             'latitude must not be greater than 90',
-            'timezone must be a valid IANA time-zone',
+            'geofenceMeters must not be less than 10',
           ],
         },
         { status: 400, statusText: 'Bad Request' }
@@ -141,10 +143,47 @@ describe('BotConfigModalComponent', () => {
     await fixture.whenStable();
 
     expect(text()).toContain('Debe ser como máximo 90.');
-    expect(text()).toContain('No es una zona horaria válida');
+    expect(text()).toContain('Debe ser al menos 10.');
     expect(toastr.error).toHaveBeenCalledWith(
       'No se pudo guardar. Revisa los campos marcados en rojo.'
     );
+  });
+
+  it('sends the hours, the daily close and the commission, but not the time zone', async () => {
+    const opens = fixture.nativeElement.querySelector('#botHoursOpens0') as HTMLInputElement;
+    opens.value = '1230';
+    opens.dispatchEvent(new Event('input'));
+    opens.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    expect(opens.value).toBe('12:30');
+
+    component['save']();
+    const request = backend.expectOne(`${url}/bot-config`);
+    expect(request.request.body.hours).toEqual([
+      { days: [1, 2, 3, 4, 5, 6], opens: '12:30', closes: '01:00' },
+    ]);
+    expect(request.request.body.dailyCloseTime).toBe('23:00');
+    expect(request.request.body.commissionPct).toBe(0.5);
+    expect('timezone' in request.request.body).toBeFalse();
+    request.flush({ config });
+  });
+
+  it('shows the time zone of the branch, which is changed in the branch data', () => {
+    expect(fixture.nativeElement.querySelector('[data-testid="bot-timezone"]').textContent).toContain(
+      'Hermosillo (Sonora)'
+    );
+    expect(fixture.nativeElement.querySelector('#botTimezone')).toBeNull();
+  });
+
+  it('does not save an hour that is not in 24-hour format', async () => {
+    const close = fixture.nativeElement.querySelector('#botClose') as HTMLInputElement;
+    close.value = '11:30 pm';
+    close.dispatchEvent(new Event('input'));
+    close.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+
+    expect(component['canSave']()).toBeFalse();
+    expect(text()).toContain('El cierre del día necesita una hora en formato de 24 horas');
   });
 
   it('does not close with a new key that was not copied', async () => {

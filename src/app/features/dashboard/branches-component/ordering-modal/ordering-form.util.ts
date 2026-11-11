@@ -5,17 +5,12 @@ import {
   UpdateOrdering,
 } from '../../../../core/services/types/ordering.types';
 import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/coordinates.util';
+import { HoursForm, hoursProblems } from '../../../../shared/utils/hours.util';
+import { isTime } from '../../../../shared/utils/time.util';
 
-/** Lunes primero, como se lee un horario; la API usa 0 = domingo. */
-export const DAYS: { value: number; label: string; name: string }[] = [
-  { value: 1, label: 'L', name: 'lunes' },
-  { value: 2, label: 'M', name: 'martes' },
-  { value: 3, label: 'Mi', name: 'miércoles' },
-  { value: 4, label: 'J', name: 'jueves' },
-  { value: 5, label: 'V', name: 'viernes' },
-  { value: 6, label: 'S', name: 'sábado' },
-  { value: 0, label: 'D', name: 'domingo' },
-];
+// El horario es igual en el mesero y en pedidos: vive en shared/utils/hours.util.
+export { DAYS, emptyHours, toggleDay } from '../../../../shared/utils/hours.util';
+export type { HoursForm } from '../../../../shared/utils/hours.util';
 
 export const DEFAULT_SCHEDULING: OrderingScheduling = {
   enabled: false,
@@ -35,12 +30,6 @@ export interface ZoneForm {
   /** Vacíos los dos: todo el día. */
   from: string;
   to: string;
-}
-
-export interface HoursForm {
-  days: number[];
-  opens: string;
-  closes: string;
 }
 
 export interface OrderingForm {
@@ -70,12 +59,6 @@ export const emptyZone = (): ZoneForm => ({
   days: [],
   from: '',
   to: '',
-});
-
-export const emptyHours = (): HoursForm => ({
-  days: [0, 1, 2, 3, 4, 5, 6],
-  opens: '',
-  closes: '',
 });
 
 /** Sin pedidos configurados, el formulario sale con los valores por defecto de la API. */
@@ -144,18 +127,12 @@ export const orderingProblems = (form: OrderingForm): string[] => {
     if (!(zone.radiusMeters >= 10)) problems.push(`${label} necesita un radio de al menos 10 m.`);
     if (Boolean(zone.from) !== Boolean(zone.to) || (zone.from && zone.from === zone.to)) {
       problems.push(`${label} necesita hora de inicio y de fin distintas, o ninguna.`);
+    } else if ((zone.from && !isTime(zone.from)) || (zone.to && !isTime(zone.to))) {
+      problems.push(`${label} necesita las horas en formato de 24 horas, como 21:00.`);
     }
   });
 
-  form.hours.forEach((window, index) => {
-    const label = `El horario ${index + 1}`;
-    if (!window.days.length) problems.push(`${label} necesita al menos un día.`);
-    if (!window.opens || !window.closes) {
-      problems.push(`${label} necesita hora de apertura y de cierre.`);
-    } else if (window.opens === window.closes) {
-      problems.push(`${label} necesita apertura y cierre distintos.`);
-    }
-  });
+  problems.push(...hoursProblems(form.hours, (index) => `El horario ${index + 1}`));
 
   return problems;
 };
@@ -217,7 +194,3 @@ export const zoneMapUrl = (zone: ZoneForm): string | null => {
     ? `https://www.google.com/maps/search/?api=1&query=${coordinates.latitude},${coordinates.longitude}`
     : null;
 };
-
-/** Agrega o quita un día de una lista, sin repetirlo. */
-export const toggleDay = (days: number[], day: number): number[] =>
-  days.includes(day) ? days.filter((value) => value !== day) : [...days, day];

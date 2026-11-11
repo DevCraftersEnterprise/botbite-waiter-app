@@ -17,7 +17,9 @@ import { BotService } from '../../../../core/services/bot.service';
 import { IconsService } from '../../../../core/services/icons.service';
 import { Branch } from '../../../../core/services/types/branches.types';
 import { OrderingScheduling } from '../../../../core/services/types/ordering.types';
+import { HoursEditorComponent } from '../../../../shared/components/hours-editor/hours-editor';
 import { ModalComponent } from '../../../../shared/components/modal/modal';
+import { TimeInputComponent } from '../../../../shared/components/time-input/time-input';
 import {
   FieldErrors,
   formErrorSummary,
@@ -25,7 +27,6 @@ import {
 } from '../../../../shared/utils/api-errors.util';
 import {
   DAYS,
-  emptyHours,
   emptyZone,
   HoursForm,
   OrderingForm,
@@ -64,7 +65,7 @@ const API_FIELDS = [
 /** Ajustes del número de pedidos (recoger y domicilio) de una sucursal. */
 @Component({
   selector: 'app-ordering-modal',
-  imports: [LucideAngularModule, ModalComponent],
+  imports: [HoursEditorComponent, LucideAngularModule, ModalComponent, TimeInputComponent],
   templateUrl: './ordering-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -180,12 +181,12 @@ export class OrderingModalComponent {
     });
   }
 
-  protected updateZoneText(
-    index: number,
-    key: 'name' | 'coordinates' | 'from' | 'to',
-    ev: Event
-  ): void {
+  protected updateZoneText(index: number, key: 'name' | 'coordinates', ev: Event): void {
     this.patchZone(index, { [key]: (ev.target as HTMLInputElement).value });
+  }
+
+  protected updateZoneTime(index: number, key: 'from' | 'to', value: string): void {
+    this.patchZone(index, { [key]: value });
   }
 
   protected updateZoneRadius(index: number, ev: Event): void {
@@ -203,31 +204,8 @@ export class OrderingModalComponent {
 
   // Horario
 
-  protected addHours(): void {
-    const f = this.form();
-    if (f) this.patch({ hours: [...f.hours, emptyHours()] });
-  }
-
-  protected removeHours(index: number): void {
-    const f = this.form();
-    if (f) this.patch({ hours: f.hours.filter((_, i) => i !== index) });
-  }
-
-  private patchHours(index: number, changes: Partial<HoursForm>): void {
-    const f = this.form();
-    if (!f) return;
-    this.patch({
-      hours: f.hours.map((window, i) => (i === index ? { ...window, ...changes } : window)),
-    });
-  }
-
-  protected updateHoursTime(index: number, key: 'opens' | 'closes', ev: Event): void {
-    this.patchHours(index, { [key]: (ev.target as HTMLInputElement).value });
-  }
-
-  protected toggleHoursDay(index: number, day: number): void {
-    const window = this.form()?.hours[index];
-    if (window) this.patchHours(index, { days: toggleDay(window.days, day) });
+  protected updateHours(hours: HoursForm[]): void {
+    this.patch({ hours });
   }
 
   protected save(): void {
