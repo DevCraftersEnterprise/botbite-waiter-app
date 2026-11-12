@@ -263,13 +263,13 @@ export class ProductsComponent {
         );
       }),
       catchError((e) => {
-        console.error('Error toggling branch status:', e);
-        this.toastrService.error('Error al cambiar el estado de la sucursal');
+        console.error('Error toggling product status:', e);
+        this.toastrService.error('Error al cambiar el estado del producto');
         return EMPTY;
       }),
       finalize(() => this.closeConfirmation())
     ).subscribe(() => {
-      this.toastrService.success(`Sucursal ${enable ? 'activada' : 'desactivada'} correctamente`);
+      this.toastrService.success(`Producto ${enable ? 'activado' : 'desactivado'} correctamente`);
       this.reload();
     });
   }
