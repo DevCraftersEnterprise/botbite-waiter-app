@@ -32,6 +32,7 @@ import {
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
 import { DEFAULT_TIMEZONE, timezoneOptions } from '../../../shared/utils/timezones.util';
+import { logError } from '../../../core/services/error-log';
 
 /** Campos del formulario de sucursal que la API puede rechazar. */
 const BRANCH_FIELDS = [
@@ -203,7 +204,7 @@ export class BranchesComponent {
           this.filteredTotal.set(response.total);
         },
         error: (error) => {
-          console.error('Error loading filtered branches:', error);
+          logError('Error loading filtered branches:', error);
           this.toastrService.error('Error al cargar las sucursales');
         },
       });
@@ -312,7 +313,7 @@ export class BranchesComponent {
 
     op.pipe(
       catchError((e) => {
-        console.error('Error saving branch:', e);
+        logError('Error saving branch:', e);
         const errors = toFormErrors(e, BRANCH_FIELDS);
         this.fieldErrors.set(errors.fields);
         this.toastrService.error(formErrorSummary(errors));
@@ -347,7 +348,7 @@ export class BranchesComponent {
 
     op.pipe(
       catchError((e) => {
-        console.error('Error toggling branch status:', e);
+        logError('Error toggling branch status:', e);
         this.toastrService.error('Error al cambiar el estado de la sucursal');
         return EMPTY;
       }),
@@ -365,7 +366,7 @@ export class BranchesComponent {
       .generateQr(branch.id)
       .pipe(
         catchError((e) => {
-          console.error('Error generating QR code:', e);
+          logError('Error generating QR code:', e);
           this.toastrService.error('Error al generar el código QR');
           return EMPTY;
         }),
@@ -396,7 +397,7 @@ export class BranchesComponent {
       .bulkUploadByCsv(file)
       .pipe(
         catchError((e) => {
-          console.error('Error uploading CSV:', e);
+          logError('Error uploading CSV:', e);
           this.toastrService.error('Error al subir el archivo CSV');
           return EMPTY;
         })
@@ -463,7 +464,7 @@ export class BranchesComponent {
       .addStaff(branch.id, email)
       .pipe(
         catchError((e) => {
-          console.error('Error assigning staff:', e);
+          logError('Error assigning staff:', e);
           this.toastrService.error(
             e?.status === 404
               ? 'No existe una cuenta de personal (rol usuario) con ese correo'
@@ -492,7 +493,7 @@ export class BranchesComponent {
       .removeStaff(branch.id, member.id)
       .pipe(
         catchError((e) => {
-          console.error('Error removing staff:', e);
+          logError('Error removing staff:', e);
           this.toastrService.error('No se pudo quitar al personal');
           return EMPTY;
         }),
@@ -511,7 +512,7 @@ export class BranchesComponent {
       .listStaff(branchId)
       .pipe(
         catchError((e) => {
-          console.error('Error loading staff:', e);
+          logError('Error loading staff:', e);
           this.toastrService.error('No se pudo cargar el personal de la sucursal');
           return EMPTY;
         }),

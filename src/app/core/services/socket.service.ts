@@ -5,6 +5,7 @@ import { merge, Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { logError } from './error-log';
 
 export type NotificationType = 'order' | 'bill' | 'pay_with_waiter' | 'payment' | 'alert' | 'invoice';
 
@@ -75,6 +76,19 @@ export class SocketService implements OnDestroy {
 
   constructor() {
     this.connect();
+    this.auth.sessionEnded.subscribe(() => this.endSession());
+  }
+
+  /**
+   * Al cerrar sesión, la conexión era del usuario anterior y seguía en la sala
+   * de su sucursal (issue #40). Se cierra y se olvida la sala: el siguiente
+   * `joinBranch` abre otra con el token del usuario nuevo.
+   */
+  private endSession(): void {
+    this.currentBranchId = null;
+    this.hasConnected = false;
+    this.authRetries = 0;
+    this.disconnect();
   }
 
   private connect(): void {
@@ -150,7 +164,6 @@ export class SocketService implements OnDestroy {
     }
 
     this.socket.emit('joinBranch', branchId);
-    console.log(`Joined branch room: ${branchId}`);
   }
 
   leaveBranch(branchId: string): void {
@@ -158,7 +171,6 @@ export class SocketService implements OnDestroy {
 
     if (this.socket) {
       this.socket.emit('leaveBranch', branchId);
-      console.log(`Left branch room: ${branchId}`);
     }
   }
 
@@ -175,7 +187,6 @@ export class SocketService implements OnDestroy {
   }
 
   private onConnect(): void {
-    console.log('WebSocket connected');
     // Si ya había conectado antes o se avisó del corte, pudo haber cambios que
     // no llegaron por el socket: las pantallas abiertas recargan.
     const missedUpdates = this.hasConnected || this.offline();
@@ -190,7 +201,6 @@ export class SocketService implements OnDestroy {
   }
 
   private onDisconnect(reason: Socket.DisconnectReason): void {
-    console.log('WebSocket disconnected');
     // Lo cerró el propio panel (al salir).
     if (reason === 'io client disconnect') return;
 
@@ -201,7 +211,7 @@ export class SocketService implements OnDestroy {
   }
 
   private onConnectError(error: Error): void {
-    console.error('WebSocket connection error:', error.message);
+    logError('WebSocket connection error:', error.message);
     this.watchOffline();
 
     // Con `active` en true, socket.io reintenta solo (la API no contesta). En

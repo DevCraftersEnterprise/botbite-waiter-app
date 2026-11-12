@@ -23,6 +23,7 @@ import { TitleComponent } from '../../../shared/components/title/title';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
 import { RestaurantForm } from '../../../core/services/forms/forms.interfaces';
+import { logError } from '../../../core/services/error-log';
 
 const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const LOGO_MAX_BYTES = 5 * 1024 * 1024;
@@ -125,7 +126,7 @@ export class RestaurantsComponent {
       })
       .pipe(
         catchError((error) => {
-          console.error('Error loading restaurants:', error);
+          logError('Error loading restaurants:', error);
           this.toastrService.error('No se pudieron cargar los restaurantes');
           return EMPTY;
         }),
@@ -211,7 +212,7 @@ export class RestaurantsComponent {
     operation
       .pipe(
         catchError((error) => {
-          console.error('Error saving restaurant:', error);
+          logError('Error saving restaurant:', error);
           const errors = toFormErrors(error, ['name', 'walletPct', 'privacyUrl']);
           this.fieldErrors.set(errors.fields);
           this.toastrService.error(formErrorSummary(errors));
@@ -245,7 +246,7 @@ export class RestaurantsComponent {
       .update(targetRestaurant.id, { isActive: false })
       .pipe(
         catchError((error) => {
-          console.error('Error disabling restaurant:', error);
+          logError('Error disabling restaurant:', error);
           this.toastrService.error('No se pudo deshabilitar el restaurante');
           return EMPTY;
         })
@@ -306,7 +307,7 @@ export class RestaurantsComponent {
     request
       .pipe(
         catchError((error) => {
-          console.error('Error saving restaurant logo:', error);
+          logError('Error saving restaurant logo:', error);
           this.toastrService.error(formErrorSummary(toFormErrors(error, [])));
           return EMPTY;
         }),

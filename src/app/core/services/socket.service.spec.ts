@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Subject } from 'rxjs';
 import type { Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -64,7 +65,13 @@ class FakeSocket {
 describe('SocketService', () => {
   const api = environment.apiBaseUrl;
   let fake: FakeSocket;
-  let auth: { accessToken: string | null; renewAccessToken: jasmine.Spy };
+  let auth: {
+    accessToken: string | null;
+    renewAccessToken: jasmine.Spy;
+    sessionEnded: Subject<void>;
+  };
+  /** Cada conexión nueva que abre el servicio; la primera es `fake`. */
+  let sockets: FakeSocket[];
   let backend: HttpTestingController;
 
   /** Deja correr las promesas pendientes (la renovación del token). */
@@ -79,7 +86,12 @@ describe('SocketService', () => {
 
   beforeEach(() => {
     fake = new FakeSocket();
-    auth = { accessToken: 'access-1', renewAccessToken: jasmine.createSpy('renewAccessToken') };
+    sockets = [];
+    auth = {
+      accessToken: 'access-1',
+      renewAccessToken: jasmine.createSpy('renewAccessToken'),
+      sessionEnded: new Subject<void>(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -90,8 +102,10 @@ describe('SocketService', () => {
         {
           provide: SOCKET_FACTORY,
           useValue: (_url: string, options: FakeSocket['options']) => {
-            fake.options = options;
-            return fake as unknown as Socket;
+            const socket = sockets.length === 0 ? fake : new FakeSocket();
+            socket.options = options;
+            sockets.push(socket);
+            return socket as unknown as Socket;
           },
         },
       ],
@@ -229,5 +243,28 @@ describe('SocketService', () => {
       .expectOne(`${api}/health`)
       .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
     expect(resyncs.length).toBe(1);
+  });
+
+  it('drops the connection of the previous user when the session ends (#40)', () => {
+    jasmine.clock().install();
+    const { service } = create();
+    fake.accept();
+    service.joinBranch('branch-a');
+
+    auth.sessionEnded.next();
+    expect(fake.active).toBeFalse();
+    // Cerrar sesión no es un corte: no avisa "Sin conexión en vivo".
+    jasmine.clock().tick(OFFLINE_AFTER_MS * 2);
+    expect(service.offline()).toBeFalse();
+
+    // El usuario nuevo abre otra conexión, con su token, y solo entra a su sucursal.
+    auth.accessToken = 'access-b';
+    service.joinBranch('branch-b');
+    expect(sockets.length).toBe(2);
+    let sent: object | undefined;
+    sockets[1].options.auth?.((data) => (sent = data));
+    expect(sent).toEqual({ token: 'access-b' });
+    sockets[1].accept();
+    expect(sockets[1].emitted).toEqual([['joinBranch', 'branch-b']]);
   });
 });
