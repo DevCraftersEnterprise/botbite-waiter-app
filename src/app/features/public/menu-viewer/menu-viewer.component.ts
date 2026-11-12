@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { IconsService } from '../../../core/services/icons.service';
+import { safeDecode, toSafePdfUrl } from './menu-pdf-url.util';
 
 @Component({
   selector: 'app-menu-viewer',
@@ -14,25 +14,18 @@ import { IconsService } from '../../../core/services/icons.service';
 })
 export class MenuViewerComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly sanitizer = inject(DomSanitizer);
   protected readonly iconsService = inject(IconsService);
 
   readonly loading = signal(true);
   readonly error = signal(false);
+  /** Siempre una URL validada con `toSafePdfUrl`, o vacía. */
   readonly pdfUrl = signal<string>('');
   readonly menuName = signal<string>('Menú');
   readonly pdfLoadError = signal(false);
 
-  readonly safePdfUrl = computed<SafeResourceUrl | null>(() => {
-    const url = this.pdfUrl();
-    if (!url) return null;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-  });
-
   ngOnInit() {
-    // Obtener parámetros de la URL
-    const menuId = this.route.snapshot.paramMap.get('menuId');
-    const pdfUrl = this.route.snapshot.queryParamMap.get('url');
+    // La ruta es pública y la URL del PDF viene en el enlace: se valida antes de usarla.
+    const pdfUrl = toSafePdfUrl(this.route.snapshot.queryParamMap.get('url'));
     const name = this.route.snapshot.queryParamMap.get('name');
 
     if (!pdfUrl) {
@@ -41,21 +34,24 @@ export class MenuViewerComponent implements OnInit {
       return;
     }
 
-    this.pdfUrl.set(decodeURIComponent(pdfUrl));
+    this.pdfUrl.set(pdfUrl);
     if (name) {
-      this.menuName.set(decodeURIComponent(name));
+      // Como antes, decodifica una vez más; con un % suelto se queda tal cual.
+      this.menuName.set(safeDecode(name));
     }
     this.loading.set(false);
   }
 
   async downloadPdf() {
-    const url = this.pdfUrl();
+    // Nunca se usa algo que no haya pasado la validación (ni `javascript:` ni otro dominio).
+    const url = toSafePdfUrl(this.pdfUrl());
     if (!url) return;
 
     const fileName = `${this.menuName()}.pdf`;
 
     try {
       const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
 
       const blobUrl = window.URL.createObjectURL(blob);
@@ -69,11 +65,8 @@ export class MenuViewerComponent implements OnInit {
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
       console.error('Error al descargar el PDF:', error);
-      // Fallback al método anterior si falla
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.click();
+      // Si no se pudo bajar, se abre el PDF de Cloudinary en otra pestaña.
+      window.open(url, '_blank', 'noopener');
     }
   }
 
