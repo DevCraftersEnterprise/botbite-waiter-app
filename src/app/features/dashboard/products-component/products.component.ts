@@ -22,6 +22,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 import { TitleComponent } from '../../../shared/components/title/title';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
+import { logError } from '../../../core/services/error-log';
 
 @Component({
   selector: 'app-products.component',
@@ -139,7 +140,7 @@ export class ProductsComponent {
       .subscribe({
         error: (error) => {
           this.toastrService.error('Error al cargar los productos');
-          console.error('Error loading products:', error);
+          logError('Error loading products:', error);
         },
       });
   }
@@ -223,7 +224,7 @@ export class ProductsComponent {
 
     op.pipe(
       catchError((e) => {
-        console.error('Error saving product:', e);
+        logError('Error saving product:', e);
         this.toastrService.error('Error al guardar el producto');
         return EMPTY;
       }),
@@ -263,7 +264,7 @@ export class ProductsComponent {
         );
       }),
       catchError((e) => {
-        console.error('Error toggling product status:', e);
+        logError('Error toggling product status:', e);
         this.toastrService.error('Error al cambiar el estado del producto');
         return EMPTY;
       }),
@@ -310,7 +311,7 @@ export class ProductsComponent {
       .uploadProductImage(this.restaurantId()!, product.id, file)
       .pipe(
         catchError((e) => {
-          console.error('Error uploading image:', e);
+          logError('Error uploading image:', e);
           this.toastrService.error('Error al subir la imagen');
           return EMPTY;
         })

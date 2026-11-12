@@ -9,6 +9,7 @@ import {
   UserProfile,
   ValidateTokenRes,
 } from './types/auth.types';
+import { setErrorLogAudience } from './error-log';
 
 /** Candado que comparten las pestañas del panel para renovar la sesión. */
 const REFRESH_LOCK = 'botbite.refresh-session';
@@ -35,6 +36,11 @@ export class AuthService {
   apiUrl = environment.apiBaseUrl;
 
   user = signal<UserProfile | null>(null);
+
+  constructor() {
+    // Los errores en la consola solo los ve un usuario super (issue #43).
+    setErrorLogAudience(() => this.user()?.roles?.includes('super') ?? false);
+  }
 
   /** La renovación en curso en esta pestaña: las peticiones que fallan juntas la esperan. */
   private renewing: Promise<string | null> | null = null;

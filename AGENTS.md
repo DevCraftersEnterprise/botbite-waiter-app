@@ -92,6 +92,7 @@ Las pruebas unitarias (Karma y Jasmine) cubren la sesión, los roles, el token y
 - Los roles son `SUPER`, `ADMIN`, `CLIENT` y `USER` (cajeros y meseros). Las acciones de administración se ocultan al personal, pero quien decide es la API: ocultar un botón no es un permiso.
 - Los datos en vivo llegan por Socket.IO (`SocketService`). Cada pantalla se une a la sala de su sucursal (`joinBranch`) y escucha `orderUpdate` y `notificationUpdate`.
 - Los avisos al usuario se muestran con ngx-toastr, en español.
+- No dejes `console.log`, `console.info`, `console.debug` ni `console.warn`. Los errores van con `logError` (`core/services/error-log.ts`), que solo los imprime si el usuario es `super`: traen detalles internos de la API.
 - Las clases `.btn-table-*` miden 48 px por debajo de `2xl` y son solo para tablas, con el texto oculto (`hidden 2xl:inline`). En modales y tarjetas usa `.btn-small` o `.btn-small-danger`.
 
 ### Despliegue

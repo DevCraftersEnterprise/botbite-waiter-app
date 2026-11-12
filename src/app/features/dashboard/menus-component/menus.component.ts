@@ -23,6 +23,7 @@ import { createSearchState } from '../../../shared/utils/search.util';
 import { createMenuSlug } from '../../../shared/utils/slug-genarator.util';
 import { Router } from '@angular/router';
 import { MenuForm } from '../../../core/services/forms/forms.interfaces';
+import { logError } from '../../../core/services/error-log';
 
 @Component({
   selector: 'app-menus.component',
@@ -148,7 +149,7 @@ export class MenusComponent {
           this.filteredTotal.set(response.length);
         },
         error: () => {
-          console.error('Error fetching menus');
+          logError('Error fetching menus');
           this.toastrService.error('Error al cargar los menús');
         },
       });
@@ -229,7 +230,7 @@ export class MenusComponent {
 
     op.pipe(
       catchError((e) => {
-        console.error('Error saving menu', e);
+        logError('Error saving menu', e);
         this.toastrService.error('Error al guardar el menú');
         return EMPTY;
       }),
@@ -266,7 +267,7 @@ export class MenusComponent {
       .updateMenu(menu.id, { isActive: enable })
       .pipe(
         catchError((e) => {
-          console.error('Error toggling menu status:', e);
+          logError('Error toggling menu status:', e);
           this.toastrService.error('Error al cambiar el estado del menú');
           return EMPTY;
         }),
@@ -288,7 +289,7 @@ export class MenusComponent {
       .uploadMenuFile(file, menuId)
       .pipe(
         catchError((e) => {
-          console.error('Error uploading PDF:', e);
+          logError('Error uploading PDF:', e);
           this.toastrService.error('Error al subir el archivo PDF');
           return EMPTY;
         })

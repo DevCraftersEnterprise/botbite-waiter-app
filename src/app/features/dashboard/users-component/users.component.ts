@@ -16,6 +16,7 @@ import { RoleBadgeComponent } from '../../../shared/components/role-badge/role-b
 import { TitleComponent } from '../../../shared/components/title/title';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
+import { logError } from '../../../core/services/error-log';
 
 @Component({
   selector: 'app-users.component',
@@ -235,7 +236,7 @@ export class UsersComponent {
       .activateUser(row.id)
       .pipe(
         catchError((e) => {
-          console.error(e);
+          logError(e);
           this.toastrService.error('Error al activar el usuario');
           return EMPTY;
         })
@@ -251,7 +252,7 @@ export class UsersComponent {
       .deactivateUser(row.id)
       .pipe(
         catchError((e) => {
-          console.error(e);
+          logError(e);
           this.toastrService.error('Error al desactivar el usuario');
           return EMPTY;
         })
@@ -308,7 +309,7 @@ export class UsersComponent {
       .addAdminRole(row.id)
       .pipe(
         catchError((e) => {
-          console.error(e);
+          logError(e);
           this.toastrService.error('Error al añadir el rol de administrador');
           return EMPTY;
         })
@@ -324,7 +325,7 @@ export class UsersComponent {
       .removeAdminRole(row.id)
       .pipe(
         catchError((e) => {
-          console.error(e);
+          logError(e);
           this.toastrService.error('Error al eliminar el rol de administrador');
           return EMPTY;
         })
