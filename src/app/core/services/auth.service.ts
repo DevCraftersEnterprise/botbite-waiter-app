@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { catchError, EMPTY, firstValueFrom, map, Observable, tap, timeout } from 'rxjs';
+import { catchError, EMPTY, firstValueFrom, map, Observable, Subject, tap, timeout } from 'rxjs';
 import {
   LoginDto,
   LoginRes,
@@ -38,6 +38,14 @@ export class AuthService {
 
   /** La renovación en curso en esta pestaña: las peticiones que fallan juntas la esperan. */
   private renewing: Promise<string | null> | null = null;
+
+  private readonly sessionEndedSubject = new Subject<void>();
+  /**
+   * Avisa que se cerró la sesión (con el botón o porque la API rechazó la
+   * renovación). La conexión en vivo y la sucursal elegida eran del usuario
+   * anterior: `SocketService` y `OrgService` las sueltan (issue #40).
+   */
+  readonly sessionEnded = this.sessionEndedSubject.asObservable();
 
   login(payload: LoginDto) {
     return this.http
@@ -88,6 +96,7 @@ export class AuthService {
     localStorage.removeItem(this.LS_ACCESS);
     localStorage.removeItem(this.LS_REFRESH);
     this.user.set(null);
+    this.sessionEndedSubject.next();
 
     // Revoca la sesión en la API para que el refresh token no pueda reutilizarse.
     if (refreshToken) {

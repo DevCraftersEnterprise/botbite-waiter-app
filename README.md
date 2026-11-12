@@ -85,6 +85,10 @@ src/app/
   - entre pestañas, un candado del navegador (Web Locks, `botbite.refresh-session`) deja renovar a una sola a la vez, y las demás usan el token que dejó;
   - si la API no contesta (red, 5xx o 429), la sesión sigue abierta. Solo se cierra si la API rechaza el refresh token.
 - **Logout:** revoca el refresh token en la API.
+  - `AuthService.sessionEnded` avisa que terminó la sesión, también cuando la API rechaza la renovación.
+  - `SocketService` cierra la conexión en vivo del usuario anterior y olvida su sala; el siguiente `joinBranch` abre otra con el token del usuario nuevo.
+  - `OrgService` vacía los restaurantes, las sucursales y la selección.
+  - La selección guardada en `localStorage` no se restaura al arrancar: `loadRestaurants` la usa solo si el usuario que entró tiene ese restaurante. Así, en una computadora de caja compartida, nadie arranca en la sucursal de otro.
 - **WebSocket** (`/orders`): se conecta con el access token (`auth.token`) y se une a la sala de la sucursal seleccionada. Recibe:
   - `orderUpdate`: refrescar pedidos;
   - `notificationUpdate`: avisos de caja (pedido nuevo, cuenta, amenidades, alertas).

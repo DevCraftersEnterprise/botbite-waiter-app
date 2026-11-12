@@ -75,4 +75,13 @@ describe('AuthService', () => {
     backend.expectNone(`${api}/auth/logout`);
     expect(auth.isAuthenticated()).toBeFalse();
   });
+
+  it('announces the end of the session on logout (#40)', () => {
+    let ended = 0;
+    auth.sessionEnded.subscribe(() => (ended += 1));
+
+    auth.logout();
+
+    expect(ended).toBe(1);
+  });
 });

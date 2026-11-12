@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 import { catchError, finalize, of, tap } from 'rxjs';
 import { Restaurant, RestaurantListResponse } from './types/restaurants.types';
 import { Branch, BranchListResponse } from './types/branches.types';
@@ -30,7 +31,10 @@ export class OrgService {
   readonly loadingBranches = signal<boolean>(false);
 
   constructor() {
-    this.initializeFromStorage();
+    // La selección guardada no se restaura al arrancar: puede ser de otro usuario
+    // de la misma computadora (issue #40). `loadRestaurants` y la carga de
+    // sucursales la usan solo si el usuario que entró tiene ese restaurante.
+    inject(AuthService).sessionEnded.subscribe(() => this.reset());
 
     effect(() => {
       const rid = this.selectedRestaurantId();
@@ -43,18 +47,6 @@ export class OrgService {
 
       this.loadAllActiveBranches(rid).subscribe();
     });
-  }
-
-  private initializeFromStorage(): void {
-    const savedRestaurant = localStorage.getItem(this.LS_RESTAURANT);
-    if (savedRestaurant) {
-      this.selectedRestaurantId.set(savedRestaurant);
-
-      const savedBranch = localStorage.getItem(this.LS_BRANCHKEY(savedRestaurant));
-      if (savedBranch) {
-        this.selectedBranchId.set(savedBranch);
-      }
-    }
   }
 
   loadRestaurants() {
@@ -90,6 +82,19 @@ export class OrgService {
       }),
       finalize(() => this.loadingRestaurants.set(false))
     );
+  }
+
+  /**
+   * Al cerrar sesión: los restaurantes, las sucursales y la selección eran del
+   * usuario anterior (issue #40). Lo guardado en localStorage se queda: al
+   * entrar, `loadRestaurants` lo usa solo si el usuario nuevo tiene ese
+   * restaurante.
+   */
+  reset(): void {
+    this.restaurants.set([]);
+    this.branches.set([]);
+    this.selectedRestaurantId.set(null);
+    this.selectedBranchId.set(null);
   }
 
   selectRestaurant(id: string | null): void {
