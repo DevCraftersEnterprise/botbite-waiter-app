@@ -75,6 +75,19 @@ export class SocketService implements OnDestroy {
 
   constructor() {
     this.connect();
+    this.auth.sessionEnded.subscribe(() => this.endSession());
+  }
+
+  /**
+   * Al cerrar sesión, la conexión era del usuario anterior y seguía en la sala
+   * de su sucursal (issue #40). Se cierra y se olvida la sala: el siguiente
+   * `joinBranch` abre otra con el token del usuario nuevo.
+   */
+  private endSession(): void {
+    this.currentBranchId = null;
+    this.hasConnected = false;
+    this.authRetries = 0;
+    this.disconnect();
   }
 
   private connect(): void {
