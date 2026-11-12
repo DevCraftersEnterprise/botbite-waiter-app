@@ -42,6 +42,7 @@ import {
   ZoneForm,
   zoneMapUrl,
 } from './ordering-form.util';
+import { logError } from '../../../../core/services/error-log';
 
 type TextField = 'phoneNumberId' | 'phoneNumber' | 'maxKm';
 type NumberField =
@@ -132,7 +133,7 @@ export class OrderingModalComponent {
       .getOrdering(branchId)
       .pipe(
         catchError((e) => {
-          console.error('Error loading ordering:', e);
+          logError('Error loading ordering:', e);
           this.toastrService.error('No se pudieron cargar los ajustes de pedidos');
           this.closed.emit();
           return EMPTY;
@@ -258,7 +259,7 @@ export class OrderingModalComponent {
       .updateOrdering(branch.id, toOrderingChanges(f, this.isAdmin()))
       .pipe(
         catchError((e) => {
-          console.error('Error saving ordering:', e);
+          logError('Error saving ordering:', e);
           const errors = toFormErrors(e, API_FIELDS);
           this.fieldErrors.set(errors.fields);
           this.toastrService.error(formErrorSummary(errors));

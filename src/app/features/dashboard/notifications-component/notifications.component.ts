@@ -25,6 +25,7 @@ import {
   saveOrder,
   sortByDate,
 } from './notifications-order.util';
+import { logError } from '../../../core/services/error-log';
 
 @Component({
   selector: 'app-notifications-component',
@@ -157,7 +158,7 @@ export class NotificationsComponent implements OnDestroy {
         this.isLoading.set(false);
       },
       error: (error) => {
-        console.error('Error loading notifications:', error);
+        logError('Error loading notifications:', error);
         if (!quiet) this.toastrService.error('Error al cargar las notificaciones.');
         this.isLoading.set(false);
       }

@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { catchError, finalize, of, tap } from 'rxjs';
 import { Restaurant, RestaurantListResponse } from './types/restaurants.types';
 import { Branch, BranchListResponse } from './types/branches.types';
+import { logError } from './error-log';
 
 @Injectable({
   providedIn: 'root',
@@ -75,7 +76,7 @@ export class OrgService {
         }
       }),
       catchError((error) => {
-        console.error('Error loading restaurants:', error);
+        logError('Error loading restaurants:', error);
         this.restaurants.set([]);
         this.selectedRestaurantId.set(null);
         return of({ restaurants: [], total: 0, pagination: {} as any });
@@ -136,7 +137,7 @@ export class OrgService {
           }
         }),
         catchError((error) => {
-          console.error('Error loading branches:', error);
+          logError('Error loading branches:', error);
           this.branches.set([]);
           this.selectedBranchId.set(null);
           return of({ branches: [], total: 0 });

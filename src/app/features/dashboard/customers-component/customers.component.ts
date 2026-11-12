@@ -38,6 +38,7 @@ import {
   statusBadge,
   statusLabel,
 } from './customers.util';
+import { logError } from '../../../core/services/error-log';
 
 /**
  * Clientes del restaurante: visitas, consumo, monedero y promociones. Los
@@ -155,7 +156,7 @@ export class CustomersComponent {
           this.exportEnabled.set(response.exportEnabled);
         },
         error: (error) => {
-          console.error('Error loading customers:', error);
+          logError('Error loading customers:', error);
           this.toastr.error('No se pudieron cargar los clientes');
         },
       });

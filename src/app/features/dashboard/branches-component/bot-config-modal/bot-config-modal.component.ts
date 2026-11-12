@@ -39,6 +39,7 @@ import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/co
 import { HoursForm, hoursProblems } from '../../../../shared/utils/hours.util';
 import { isTime } from '../../../../shared/utils/time.util';
 import { timezoneLabel } from '../../../../shared/utils/timezones.util';
+import { logError } from '../../../../core/services/error-log';
 
 interface BotConfigForm {
   /** Lo que va después del prefijo del restaurante. */
@@ -278,7 +279,7 @@ export class BotConfigModalComponent {
       .getConfig(branchId)
       .pipe(
         catchError((e) => {
-          console.error('Error loading bot config:', e);
+          logError('Error loading bot config:', e);
           this.toastrService.error('No se pudo cargar la configuración del mesero');
           this.closed.emit();
           return EMPTY;
@@ -299,7 +300,7 @@ export class BotConfigModalComponent {
       .listKeys(branchId)
       .pipe(
         catchError((e) => {
-          console.error('Error loading bot keys:', e);
+          logError('Error loading bot keys:', e);
           this.toastrService.error('No se pudieron cargar las llaves');
           return EMPTY;
         })
@@ -383,7 +384,7 @@ export class BotConfigModalComponent {
       .updateConfig(branch.id, this.toChanges(f))
       .pipe(
         catchError((e) => {
-          console.error('Error saving bot config:', e);
+          logError('Error saving bot config:', e);
           const errors = toFormErrors(e, API_FIELDS);
           const byFormField: FieldErrors = {};
           for (const [field, message] of Object.entries(errors.fields)) {
@@ -457,7 +458,7 @@ export class BotConfigModalComponent {
       .createKey(branch.id, name)
       .pipe(
         catchError((e) => {
-          console.error('Error creating bot key:', e);
+          logError('Error creating bot key:', e);
           this.toastrService.error('No se pudo generar la llave');
           return EMPTY;
         }),
@@ -494,7 +495,7 @@ export class BotConfigModalComponent {
       .revokeKey(branch.id, key.id)
       .pipe(
         catchError((e) => {
-          console.error('Error revoking bot key:', e);
+          logError('Error revoking bot key:', e);
           this.toastrService.error('No se pudo revocar la llave');
           return EMPTY;
         }),

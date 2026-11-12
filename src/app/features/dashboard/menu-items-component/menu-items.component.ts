@@ -28,6 +28,7 @@ import { ToastrService } from 'ngx-toastr';
 import { downloadTemplate } from '../../../shared/utils/download-template.util';
 import { MenuCsvImportComponent } from './menu-csv-import/menu-csv-import.component';
 import { downloadBlob, menuCsvFileName } from './menu-csv-import/menu-csv.util';
+import { logError } from '../../../core/services/error-log';
 
 @Component({
   selector: 'app-menu-items',
@@ -220,7 +221,7 @@ export class MenuItemsComponent {
       const shortId = extractMenuIdFromSlug(slug);
 
       if (!shortId) {
-        console.error('Invalid menu slug:', slug);
+        logError('Invalid menu slug:', slug);
         this.router.navigateByUrl('/dashboard/menus');
         return;
       }
@@ -249,14 +250,14 @@ export class MenuItemsComponent {
           this.menu.set(foundMenu);
           this.fetch();
         } else {
-          console.error('Menu not found for shortId:', shortId);
+          logError('Menu not found for shortId:', shortId);
           this.router.navigateByUrl('/dashboard/menus');
         }
 
         this.loading.set(false);
       },
       error: (error) => {
-        console.error('Error loading menus:', error);
+        logError('Error loading menus:', error);
         this.loading.set(false);
         this.router.navigateByUrl('/dashboard/menus');
       },
@@ -297,7 +298,7 @@ export class MenuItemsComponent {
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error fetching menu items:', err);
+        logError('Error fetching menu items:', err);
         this.loading.set(false);
       },
     });
@@ -460,7 +461,7 @@ export class MenuItemsComponent {
           this.fetch();
         },
         error: (err) => {
-          console.error('Error updating menu item:', err);
+          logError('Error updating menu item:', err);
           this.saving.set(false);
         },
       });
@@ -488,7 +489,7 @@ export class MenuItemsComponent {
           this.fetch();
         },
         error: (err) => {
-          console.error('Error saving menu items:', err);
+          logError('Error saving menu items:', err);
           this.saving.set(false);
         },
       });
@@ -527,7 +528,7 @@ export class MenuItemsComponent {
         this.fetch();
       },
       error: (err) => {
-        console.error('Error toggling menu item:', err);
+        logError('Error toggling menu item:', err);
         this.saving.set(false);
       },
     });
@@ -549,7 +550,7 @@ export class MenuItemsComponent {
         this.fetch();
       },
       error: (err) => {
-        console.error('Error toggling recommend status:', err);
+        logError('Error toggling recommend status:', err);
         this.saving.set(false);
       },
     });

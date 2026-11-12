@@ -5,6 +5,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { IconsService } from '../../../core/services/icons.service';
 import { safeDecode, toSafePdfUrl } from './menu-pdf-url.util';
+import { logError } from '../../../core/services/error-log';
 
 @Component({
   selector: 'app-menu-viewer',
@@ -64,7 +65,7 @@ export class MenuViewerComponent implements OnInit {
 
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
-      console.error('Error al descargar el PDF:', error);
+      logError('Error al descargar el PDF:', error);
       // Si no se pudo bajar, se abre el PDF de Cloudinary en otra pestaña.
       window.open(url, '_blank', 'noopener');
     }

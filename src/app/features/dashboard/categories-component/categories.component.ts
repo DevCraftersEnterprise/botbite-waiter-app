@@ -22,6 +22,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 import { TitleComponent } from '../../../shared/components/title/title';
 import { createPaginationState } from '../../../shared/utils/pagination.util';
 import { createSearchState } from '../../../shared/utils/search.util';
+import { logError } from '../../../core/services/error-log';
 
 @Component({
   selector: 'app-categories',
@@ -125,7 +126,7 @@ export class CategoriesComponent {
       })
       .pipe(
         catchError((error) => {
-          console.error('Error loading categories:', error);
+          logError('Error loading categories:', error);
           this.toastrService.error('No se pudieron cargar las categorías');
           return EMPTY;
         }),
@@ -205,7 +206,7 @@ export class CategoriesComponent {
     operation
       .pipe(
         catchError((error) => {
-          console.error('Error saving category:', error);
+          logError('Error saving category:', error);
           this.toastrService.error(
             error?.status === 409
               ? 'El restaurante ya tiene una categoría con ese nombre'
@@ -240,7 +241,7 @@ export class CategoriesComponent {
       .update(targetCategory.id, { isActive: false })
       .pipe(
         catchError((error) => {
-          console.error('Error disabling category:', error);
+          logError('Error disabling category:', error);
           this.toastrService.error('Error al deshabilitar la categoría');
           return EMPTY;
         })
