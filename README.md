@@ -52,6 +52,11 @@ Es una SPA estática. Publica el contenido de `dist/botbite-web-app/browser` en 
 - **Build Command:** `npm ci && npm run build`.
 - **Reescritura de rutas:** toda ruta debe servir `index.html` (`/* → /index.html`). Si no, recargar en `/dashboard/...` da 404. En Netlify y Cloudflare Pages ya lo resuelve [public/_redirects](public/_redirects). En otros hostings hay que configurarlo como regla de *rewrite*.
 - Antes de compilar, revisa que `environment.ts` apunte a la API de producción.
+- **Cabeceras de seguridad:** [public/_headers](public/_headers) manda la `Content-Security-Policy` y `X-Frame-Options`, entre otras.
+  - `script-src` solo deja los scripts del panel y el worker de pdf.js (de `cdn.jsdelivr.net`). Así, un `javascript:` o un script en línea no corren.
+  - Por eso el build de producción tiene `inlineCritical: false`: Angular cargaría los estilos con un `onload` en línea, que la CSP bloquea.
+  - Si agregas una librería que cargue scripts de otro dominio, súmalo a `script-src`. Lo revisan `documentacion/pruebas-locales/run-menu-seguro.js` y `run-csp-panel.js`.
+- **Visor público `/menu/:menuId`:** solo acepta PDFs de Cloudinary por https (`menu-pdf-url.util.ts`). Cualquier otra `?url=` muestra el error.
 
 ## Estructura
 

@@ -1,0 +1,11 @@
+# Cabeceras de seguridad de Netlify para todo el panel (issue #39).
+# - script-src: solo los scripts del panel y el worker de pdf.js (ng2-pdf-viewer lo
+#   carga de cdn.jsdelivr.net). Bloquea los scripts en línea y las URL javascript:.
+# - worker-src: pdf.js arma su worker con un blob: que importa el de jsdelivr.
+# - No se limitan estilos, imágenes ni conexiones (Leaflet, OpenStreetMap,
+#   Cloudinary, la API y Socket.IO funcionan igual).
+/*
+  Content-Security-Policy: script-src 'self' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
