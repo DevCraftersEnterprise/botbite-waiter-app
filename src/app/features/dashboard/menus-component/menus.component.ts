@@ -261,7 +261,21 @@ export class MenusComponent {
 
     if (!menu || enable === null) return;
 
-    console.log(enable);
+    // Antes solo se imprimía en la consola y el menú no cambiaba (#44).
+    this.menusService
+      .updateMenu(menu.id, { isActive: enable })
+      .pipe(
+        catchError((e) => {
+          console.error('Error toggling menu status:', e);
+          this.toastrService.error('Error al cambiar el estado del menú');
+          return EMPTY;
+        }),
+        finalize(() => this.closeConfirmation())
+      )
+      .subscribe(() => {
+        this.toastrService.success(`Menú ${enable ? 'activado' : 'desactivado'} correctamente`);
+        this.reload();
+      });
   }
 
   onPdfSelected(ev: Event, menuId: string): void {
