@@ -38,7 +38,7 @@ import {
 import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/coordinates.util';
 import { HoursForm, hoursProblems } from '../../../../shared/utils/hours.util';
 import { isTime } from '../../../../shared/utils/time.util';
-import { timezoneLabel } from '../../../../shared/utils/timezones.util';
+import { timezoneOptions } from '../../../../shared/utils/timezones.util';
 import { logError } from '../../../../core/services/error-log';
 
 interface BotConfigForm {
@@ -55,6 +55,8 @@ interface BotConfigForm {
   sessionHours: number;
   postSaleHours: number;
   maxRecommendations: number;
+  /** La del mesero: es la de la sucursal. Pedidos tiene la suya. */
+  timezone: string;
   /** "Cierre del día": no es el horario del mesero. */
   dailyCloseTime: string;
   /** Horario del mesero. Vacío: atiende siempre. */
@@ -71,6 +73,7 @@ type TextField =
   | 'botBaseUrl'
   | 'coordinates'
   | 'validTables'
+  | 'timezone'
   | 'dailyCloseTime'
   | 'surveyUrl';
 
@@ -95,6 +98,7 @@ const API_FIELDS = [
   'sessionHours',
   'postSaleHours',
   'maxRecommendations',
+  'timezone',
   'dailyCloseTime',
   'hours',
   'commissionPct',
@@ -143,6 +147,7 @@ const toForm = (config: BotConfig, restaurantSlug: string | null): BotConfigForm
   sessionHours: config.sessionHours,
   postSaleHours: config.postSaleHours,
   maxRecommendations: config.maxRecommendations,
+  timezone: config.timezone,
   dailyCloseTime: config.dailyCloseTime,
   hours: (config.hours ?? []).map((window) => ({ ...window, days: [...window.days] })),
   commissionPct: config.commissionPct ?? 0,
@@ -178,8 +183,6 @@ export class BotConfigModalComponent {
   protected readonly features = FEATURES;
 
   protected readonly form = signal<BotConfigForm | null>(null);
-  /** Se cambia en los datos de la sucursal: aquí solo se muestra. */
-  protected readonly timezone = signal('');
   /** El slug como está guardado: solo se manda si cambia. */
   private readonly savedSlug = signal('');
   protected readonly loading = signal(false);
@@ -230,7 +233,8 @@ export class BotConfigModalComponent {
     return coordinates && coordinates !== 'invalid' ? coordinates : null;
   });
 
-  protected readonly timezoneName = computed(() => timezoneLabel(this.timezone()));
+  /** Una zona guardada que no está en la lista se conserva como opción. */
+  protected readonly timezones = computed(() => timezoneOptions(this.form()?.timezone));
 
   /** Lo que impide guardar el horario o el cierre del día, en español. */
   protected readonly timeProblems = computed(() => {
@@ -288,7 +292,6 @@ export class BotConfigModalComponent {
       )
       .subscribe((config) => {
         this.savedSlug.set(config.slug);
-        this.timezone.set(config.timezone);
         this.form.set(toForm(config, this.restaurantSlug()));
       });
 
@@ -333,6 +336,10 @@ export class BotConfigModalComponent {
       { coordinates: formatCoordinates(point.latitude, point.longitude) },
       'coordinates'
     );
+  }
+
+  protected updateTimezone(ev: Event): void {
+    this.patchForm({ timezone: (ev.target as HTMLSelectElement).value }, 'timezone');
   }
 
   protected updateDailyClose(value: string): void {
@@ -419,6 +426,7 @@ export class BotConfigModalComponent {
       sessionHours: f.sessionHours,
       postSaleHours: f.postSaleHours,
       maxRecommendations: f.maxRecommendations,
+      timezone: f.timezone,
       dailyCloseTime: f.dailyCloseTime,
       hours: f.hours.map((window) => ({
         days: [...window.days],

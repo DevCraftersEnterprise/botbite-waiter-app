@@ -50,6 +50,8 @@ export interface Ordering {
   types: OrderingType[];
   delivery: OrderingDelivery;
   noDeliveryZones: NoDeliveryZone[];
+  /** La de pedidos: horario y programados. Nace con la de la sucursal. */
+  timezone: string;
   hours: OrderingHours[];
   scheduling: OrderingScheduling;
   /** Comisión de BotBite sobre el total, envío incluido. */

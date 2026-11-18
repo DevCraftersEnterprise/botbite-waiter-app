@@ -28,6 +28,7 @@ describe('ordering form', () => {
         to: '06:00',
       },
     ],
+    timezone: 'America/Mazatlan',
     hours: [{ days: [1, 2, 3], opens: '18:00', closes: '23:00' }],
     scheduling: {
       enabled: true,
@@ -59,6 +60,12 @@ describe('ordering form', () => {
     );
     expect(form.scheduling.maxDays).toBe(1);
     expect(orderingProblems(form)).toEqual([]);
+  });
+
+  it('starts with the branch timezone and keeps its own once saved', () => {
+    expect(toOrderingForm(null, 'America/Cancun').timezone).toBe('America/Cancun');
+    expect(toOrderingForm(ordering, 'America/Cancun').timezone).toBe('America/Mazatlan');
+    expect(toOrderingChanges(toOrderingForm(ordering), false).timezone).toBe('America/Mazatlan');
   });
 
   it('round-trips the settings, with zones as pasted coordinates', () => {

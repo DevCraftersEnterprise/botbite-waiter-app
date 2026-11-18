@@ -350,6 +350,30 @@
         </section>
       }
 
+      <section class="space-y-1">
+        <label for="orderingTimezone" class="block text-sm font-semibold"
+          >Zona horaria de pedidos</label
+        >
+        <select
+          id="orderingTimezone"
+          class="input w-full"
+          [value]="f.timezone"
+          (change)="updateTimezone($event)"
+        >
+          @for (zone of timezones(); track zone.value) {
+            <option [value]="zone.value" [selected]="zone.value === f.timezone">
+              {{ zone.label }}
+            </option>
+          }
+        </select>
+        <p class="text-xs text-neutral-500">
+          La usan el horario de pedidos y los programados. Es aparte de la del mesero.
+        </p>
+        @if (errorOf('timezone'); as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+      </section>
+
       <app-hours-editor
         title="Horario de pedidos"
         [hours]="f.hours"
