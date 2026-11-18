@@ -149,7 +149,7 @@ describe('BotConfigModalComponent', () => {
     );
   });
 
-  it('sends the hours, the daily close and the commission, but not the time zone', async () => {
+  it('sends the hours, the daily close, the commission and the time zone', async () => {
     const opens = fixture.nativeElement.querySelector('#botHoursOpens0') as HTMLInputElement;
     opens.value = '1230';
     opens.dispatchEvent(new Event('input'));
@@ -164,15 +164,34 @@ describe('BotConfigModalComponent', () => {
     ]);
     expect(request.request.body.dailyCloseTime).toBe('23:00');
     expect(request.request.body.commissionPct).toBe(0.5);
-    expect('timezone' in request.request.body).toBeFalse();
+    expect(request.request.body.timezone).toBe('America/Hermosillo');
     request.flush({ config });
   });
 
-  it('shows the time zone of the branch, which is changed in the branch data', () => {
-    expect(fixture.nativeElement.querySelector('[data-testid="bot-timezone"]').textContent).toContain(
-      'Hermosillo (Sonora)'
-    );
-    expect(fixture.nativeElement.querySelector('#botTimezone')).toBeNull();
+  it('lets the waiter time zone be changed here', async () => {
+    const select = fixture.nativeElement.querySelector('#botTimezone') as HTMLSelectElement;
+    expect(select.value).toBe('America/Hermosillo');
+    select.value = 'America/Mazatlan';
+    select.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+
+    component['save']();
+    const request = backend.expectOne(`${url}/bot-config`);
+    expect(request.request.body.timezone).toBe('America/Mazatlan');
+    request.flush({ config });
+  });
+
+  it('shows the waiter hours before the daily close, and how to add them', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const title = Array.from(element.querySelectorAll('h3')).find(
+      (heading) => heading.textContent?.trim() === 'Horario del mesero'
+    )!;
+    const close = element.querySelector('#botClose')!;
+    expect(title.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    component['updateHours']([]);
+    await fixture.whenStable();
+    expect(text()).toContain('Para poner la hora de apertura y de cierre, pulsa Agregar horario.');
   });
 
   it('does not save an hour that is not in 24-hour format', async () => {

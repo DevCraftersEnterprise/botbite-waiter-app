@@ -64,6 +64,8 @@ import { TimeInputComponent } from '../time-input/time-input';
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Sin bloque, el espacio del modal no aplica y lo que sigue queda pegado.
+  host: { class: 'block' },
 })
 export class HoursEditorComponent {
   readonly title = input.required<string>();

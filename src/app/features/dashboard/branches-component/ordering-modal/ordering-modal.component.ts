@@ -25,6 +25,7 @@ import {
 import { ModalComponent } from '../../../../shared/components/modal/modal';
 import { TimeInputComponent } from '../../../../shared/components/time-input/time-input';
 import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/coordinates.util';
+import { DEFAULT_TIMEZONE, timezoneOptions } from '../../../../shared/utils/timezones.util';
 import {
   FieldErrors,
   formErrorSummary,
@@ -62,6 +63,7 @@ const API_FIELDS = [
   'types',
   'delivery',
   'noDeliveryZones',
+  'timezone',
   'hours',
   'scheduling',
   'paymentLinkMinutes',
@@ -142,7 +144,7 @@ export class OrderingModalComponent {
       )
       .subscribe((ordering) => {
         this.isNew.set(ordering === null);
-        this.form.set(toOrderingForm(ordering));
+        this.form.set(toOrderingForm(ordering, this.branch()?.timezone ?? DEFAULT_TIMEZONE));
       });
   }
 
@@ -241,6 +243,13 @@ export class OrderingModalComponent {
   }
 
   // Horario
+
+  /** Una zona guardada que no está en la lista se conserva como opción. */
+  protected readonly timezones = computed(() => timezoneOptions(this.form()?.timezone));
+
+  protected updateTimezone(ev: Event): void {
+    this.patch({ timezone: (ev.target as HTMLSelectElement).value });
+  }
 
   protected updateHours(hours: HoursForm[]): void {
     this.patch({ hours });

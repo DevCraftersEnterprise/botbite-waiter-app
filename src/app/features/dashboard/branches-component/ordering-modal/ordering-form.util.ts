@@ -7,6 +7,7 @@ import {
 import { formatCoordinates, parseCoordinates } from '../../../../shared/utils/coordinates.util';
 import { HoursForm, hoursProblems } from '../../../../shared/utils/hours.util';
 import { isTime } from '../../../../shared/utils/time.util';
+import { DEFAULT_TIMEZONE } from '../../../../shared/utils/timezones.util';
 
 // El horario es igual en el mesero y en pedidos: vive en shared/utils/hours.util.
 export { DAYS, emptyHours, toggleDay } from '../../../../shared/utils/hours.util';
@@ -45,6 +46,8 @@ export interface OrderingForm {
   /** Vacío: sin límite. */
   maxKm: string;
   zones: ZoneForm[];
+  /** La de pedidos; la del mesero es la de la sucursal. */
+  timezone: string;
   hours: HoursForm[];
   scheduling: OrderingScheduling;
   commissionPct: number;
@@ -61,8 +64,14 @@ export const emptyZone = (): ZoneForm => ({
   to: '',
 });
 
-/** Sin pedidos configurados, el formulario sale con los valores por defecto de la API. */
-export const toOrderingForm = (ordering: Ordering | null): OrderingForm => ({
+/**
+ * Sin pedidos configurados, el formulario sale con los valores por defecto de
+ * la API: la zona horaria es la de la sucursal.
+ */
+export const toOrderingForm = (
+  ordering: Ordering | null,
+  branchTimezone: string = DEFAULT_TIMEZONE
+): OrderingForm => ({
   enabled: ordering?.enabled ?? false,
   accepting: ordering?.accepting ?? true,
   phoneNumberId: ordering?.phoneNumberId ?? '',
@@ -81,6 +90,7 @@ export const toOrderingForm = (ordering: Ordering | null): OrderingForm => ({
     from: zone.from ?? '',
     to: zone.to ?? '',
   })),
+  timezone: ordering?.timezone ?? branchTimezone,
   hours: (ordering?.hours ?? []).map((window) => ({ ...window, days: [...window.days] })),
   scheduling: { ...DEFAULT_SCHEDULING, ...ordering?.scheduling },
   commissionPct: ordering?.commissionPct ?? 0,
@@ -166,6 +176,7 @@ export const toOrderingChanges = (form: OrderingForm, isAdmin: boolean): UpdateO
         to: zone.to || null,
       };
     }),
+    timezone: form.timezone,
     hours: form.hours.map((window) => ({
       days: [...window.days],
       opens: window.opens,
