@@ -104,6 +104,24 @@
         }
       </section>
 
+      <app-hours-editor
+        title="Horario del mesero"
+        idPrefix="botHours"
+        groupLabel="Días del horario del mesero"
+        [hours]="f.hours"
+        emptyText="Sin horario, el mesero atiende a cualquier hora. Para poner la hora de apertura y de cierre, pulsa Agregar horario."
+        (hoursChange)="updateHours($event)"
+      >
+        <p class="text-xs text-neutral-500">
+          Horas en formato de 24 horas. Agrega varios horarios para cortar a mediodía o para días
+          distintos; si cierra después de medianoche, pon la hora del día siguiente (de 13:00 a
+          01:00).
+        </p>
+        @if (errorOf('hours'); as message) {
+          <p class="text-xs text-red-600">{{ message }}</p>
+        }
+      </app-hours-editor>
+
       <section class="space-y-3">
         <h3 class="text-sm font-semibold">Operación</h3>
         <div class="grid gap-3 md:grid-cols-3">
@@ -123,11 +141,26 @@
             }
           </div>
           <div class="space-y-1">
-            <span class="text-sm font-medium">Zona horaria</span>
-            <p class="py-2 text-sm" data-testid="bot-timezone">{{ timezoneName() }}</p>
+            <label for="botTimezone" class="text-sm font-medium">Zona horaria del mesero</label>
+            <select
+              id="botTimezone"
+              class="input"
+              [class]="invalidClass('timezone')"
+              [value]="f.timezone"
+              (change)="updateTimezone($event)"
+            >
+              @for (zone of timezones(); track zone.value) {
+                <option [value]="zone.value" [selected]="zone.value === f.timezone">
+                  {{ zone.label }}
+                </option>
+              }
+            </select>
             <p class="text-xs text-neutral-500">
-              Es de la sucursal y la usan el mesero y los pedidos. Se cambia en Editar sucursal.
+              Es la de la sucursal, la misma de Editar sucursal. Pedidos tiene la suya.
             </p>
+            @if (errorOf('timezone'); as message) {
+              <p class="text-xs text-red-600">{{ message }}</p>
+            }
           </div>
           <div class="space-y-1">
             <label for="botQrMinutes" class="text-sm font-medium"
@@ -226,24 +259,6 @@
           }
         </div>
       </section>
-
-      <app-hours-editor
-        title="Horario del mesero"
-        idPrefix="botHours"
-        groupLabel="Días del horario del mesero"
-        [hours]="f.hours"
-        emptyText="Sin horario, el mesero atiende a cualquier hora."
-        (hoursChange)="updateHours($event)"
-      >
-        <p class="text-xs text-neutral-500">
-          Horas en formato de 24 horas. Agrega varios horarios para cortar a mediodía o para días
-          distintos; si cierra después de medianoche, pon la hora del día siguiente (de 13:00 a
-          01:00).
-        </p>
-        @if (errorOf('hours'); as message) {
-          <p class="text-xs text-red-600">{{ message }}</p>
-        }
-      </app-hours-editor>
 
       @if (timeProblems().length) {
         <ul class="space-y-1 text-sm text-red-600" data-testid="bot-time-problems">

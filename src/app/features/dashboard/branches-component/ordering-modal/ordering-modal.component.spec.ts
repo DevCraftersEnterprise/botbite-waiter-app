@@ -19,7 +19,7 @@ describe('OrderingModalComponent', () => {
   let toastr: jasmine.SpyObj<ToastrService>;
   let component: OrderingModalComponent & Record<string, any>;
 
-  const branch = { id: 'b1', name: 'Morelos' } as Branch;
+  const branch = { id: 'b1', name: 'Morelos', timezone: 'America/Cancun' } as Branch;
 
   const ordering: Ordering = {
     enabled: true,
@@ -29,6 +29,7 @@ describe('OrderingModalComponent', () => {
     types: ['pickup', 'delivery'],
     delivery: { baseFee: 30, includedKm: 4, extraPer100m: 1, maxKm: 8.5 },
     noDeliveryZones: [],
+    timezone: 'America/Hermosillo',
     hours: [{ days: [0, 1, 2, 3, 4, 5, 6], opens: '18:00', closes: '23:00' }],
     scheduling: {
       enabled: false,
@@ -94,6 +95,27 @@ describe('OrderingModalComponent', () => {
     request.flush({ ordering });
     await fixture.whenStable();
     expect(toastr.success).toHaveBeenCalledWith('Ajustes de pedidos guardados');
+  });
+
+  it('lets the owner change the ordering timezone apart from the waiter one', async () => {
+    await open(['client']);
+
+    const select = element().querySelector('#orderingTimezone') as HTMLSelectElement;
+    expect(select.value).toBe('America/Hermosillo');
+    select.value = 'America/Mazatlan';
+    select.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+
+    component['save']();
+    const request = backend.expectOne(url);
+    expect(request.request.body.timezone).toBe('America/Mazatlan');
+    request.flush({ ordering: { ...ordering, timezone: 'America/Mazatlan' } });
+  });
+
+  it('starts a new ordering setup with the branch timezone', async () => {
+    await open(['admin'], null);
+    const select = element().querySelector('#orderingTimezone') as HTMLSelectElement;
+    expect(select.value).toBe('America/Cancun');
   });
 
   it('lets an admin turn ordering on with its number', async () => {
